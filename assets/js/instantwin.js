@@ -8,6 +8,12 @@ jQuery(document).ready(function($) {
   let wheelInstance = null;
   let playHistory = [];
   
+  // Audio functionality for scratch sound - declare early
+  let scratchAudio = null;
+  let scratchAudioLoaded = false;
+  let scratchAudioFailed = false;
+  let audioContext = null;
+  
   // Preload scratch sound on page load
   console.log('[Audio] Preloading scratch sound...');
   initScratchSound();
@@ -2780,10 +2786,6 @@ jQuery(document).ready(function($) {
   })();
   
   // Audio functionality for scratch sound
-  let scratchAudio = null;
-  let scratchAudioLoaded = false;
-  let scratchAudioFailed = false;
-  let audioContext = null;
   
   function initScratchSound() {
     if (scratchAudio || scratchAudioFailed) return;
