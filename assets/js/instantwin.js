@@ -1225,7 +1225,7 @@ jQuery(document).ready(function($) {
     const scratchHTML = `
       <div class="scratch-container">
         <div class="scratch-header">
-          <h3>YOU HAVE <span id="remaining-cards-count">${currentProduct.tickets.length}</span> <span id="remaining-cards-text">${currentProduct.tickets.length === 1 ? 'SCRATCHCARD' : 'SCRATCHCARDS'}</span> REMAINING</h3>
+          <h3>you have <span id="remaining-cards-count">${currentProduct.tickets.length}</span> <span id="remaining-cards-text">${currentProduct.tickets.length === 1 ? 'scratchcard' : 'scratchcards'}</span> remaining</h3>
           <p>Scratch now to see if you've won!</p>
         </div>
                 <div class="scratch-slider-container">
@@ -1420,7 +1420,7 @@ jQuery(document).ready(function($) {
     console.log('[Remaining Cards] All revealed cards in DOM:', revealedCards.length);
     
     $('#remaining-cards-count').text(remainingCards);
-    $('#remaining-cards-text').text(remainingCards === 1 ? 'SCRATCHCARD' : 'SCRATCHCARDS');
+    $('#remaining-cards-text').text(remainingCards === 1 ? 'scratchcard' : 'scratchcards');
   }
   
   function revealCurrentCard($card, isWin, prize) {
