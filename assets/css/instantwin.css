@@ -1852,10 +1852,6 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   transform: scale(1);
 }
 
-.owl-carousel .owl-nav button:hover {
-  transform: scale(1.1);
-}
-
 /* Prevent layout shifts during transitions */
 .owl-carousel .owl-stage {
   transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
