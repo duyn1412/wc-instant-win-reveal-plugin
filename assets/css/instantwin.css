@@ -1800,9 +1800,8 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 }
 
 .owl-carousel .owl-item {
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
-  transform-style: preserve-3d;
-  will-change: transform, opacity;
+  transition: opacity 0.6s ease-in-out;
+  will-change: opacity;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   -moz-backface-visibility: hidden;
@@ -1812,33 +1811,33 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 .owl-carousel .owl-item.active.center {
   z-index: 3;
   opacity: 1;
-  transform: scale(1) translateZ(0px);
+  transform: none;
   margin-right: -250px;
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: opacity 0.6s ease-in-out;
 }
 
 /* Side cards - behind the center card */
 .owl-carousel .owl-item.active:not(.center) {
   z-index: 1;
-  opacity: 0.6;
-  transform: scale(.8) translateZ(-50px);
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  opacity: 0.3;
+  transform: none;
+  transition: opacity 0.6s ease-in-out;
 }
 
 /* Single card - no opacity effect */
 .owl-carousel.owl-loaded:has(.owl-item:nth-child(1):last-child) .owl-item.active {
   opacity: 1;
-  transform: scale(1);
+  transform: none;
   z-index: 1;
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: opacity 0.6s ease-in-out;
 }
 
 /* Non-active cards */
 .owl-carousel .owl-item:not(.active) {
   z-index: 0;
   opacity: 0;
-  transform: scale(0.8) translateZ(-100px);
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform: none;
+  transition: opacity 0.6s ease-in-out;
 }
 
 /* Ensure center card is always on top */
@@ -1854,7 +1853,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 
 /* Prevent layout shifts during transitions */
 .owl-carousel .owl-stage {
-  transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: transform 0.6s ease-in-out;
   will-change: transform;
 }
 
@@ -1868,41 +1867,36 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 
 /* Special styling for 2 cards to show stacked effect */
 .owl-carousel.owl-loaded:has(.owl-item:nth-child(2):last-child) .owl-item.active:not(.center) {
-  opacity: 0.6;
-  transform: scale(0.8) translateZ(-50px);
+  opacity: 0.3;
+  transform: none;
   z-index: 1;
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transition: opacity 0.6s ease-in-out;
 }
 
-/* Performance optimizations for smoother animations */
+/* Performance optimizations for fade animations */
 .owl-carousel {
-  perspective: 1000px;
-  -webkit-perspective: 1000px;
-  -moz-perspective: 1000px;
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  -moz-transform-style: preserve-3d;
+  /* Remove 3D transforms for fade effect */
 }
 
 /* Hardware acceleration for smoother transitions */
 .owl-carousel .owl-item,
 .owl-carousel .owl-stage,
 .scratch-card-individual {
+  /* Keep basic hardware acceleration */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   -moz-transform: translateZ(0);
   -ms-transform: translateZ(0);
 }
 
-/* Individual card styling for depth */
+/* Individual card styling for fade effect */
 .scratch-card-individual {
-  transform-style: preserve-3d;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   -moz-backface-visibility: hidden;
   -ms-backface-visibility: hidden;
-  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
-  will-change: transform, opacity;
+  transition: opacity 0.6s ease-in-out;
+  will-change: opacity;
 }
 
 /* Make scratch container area interactive for continuous scratching */
