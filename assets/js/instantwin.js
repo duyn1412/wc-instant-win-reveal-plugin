@@ -8,6 +8,10 @@ jQuery(document).ready(function($) {
   let wheelInstance = null;
   let playHistory = [];
   
+  // Preload scratch sound on page load
+  console.log('[Audio] Preloading scratch sound...');
+  initScratchSound();
+  
   // Sound system
   const gameSounds = {
     spinning: null,
@@ -1280,8 +1284,24 @@ jQuery(document).ready(function($) {
     
     // Add auto-reveal button event handler
     $('#auto-reveal-btn').click(function() {
-      // Play scratch sound
-      playScratchSound();
+      // Force initialize and play scratch sound on first click
+      console.log('[Auto-Reveal] Button clicked - initializing audio...');
+      
+      // Resume audio context if suspended (required for autoplay)
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('[Audio] Audio context resumed from suspended state');
+        });
+      }
+      
+      if (!scratchAudio && !scratchAudioFailed) {
+        initScratchSound();
+      }
+      
+      // Small delay to ensure audio is ready, then play
+      setTimeout(() => {
+        playScratchSound();
+      }, 50);
       
       const $button = $(this);
       const $slider = $('#scratch-cards-slider');
@@ -2761,43 +2781,91 @@ jQuery(document).ready(function($) {
   
   // Audio functionality for scratch sound
   let scratchAudio = null;
+  let scratchAudioLoaded = false;
+  let scratchAudioFailed = false;
+  let audioContext = null;
+  
+  function initScratchSound() {
+    if (scratchAudio || scratchAudioFailed) return;
+    
+    try {
+      const scratchUrl = instantWin.plugin_url + '/assets/sound/scratch-sound.mp3';
+      console.log('[Audio] Initializing scratch sound:', scratchUrl);
+      
+      // Create audio context if not exists
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('[Audio] Audio context created:', audioContext.state);
+      }
+      
+      scratchAudio = new Audio(scratchUrl);
+      scratchAudio.preload = 'auto';
+      scratchAudio.volume = 0.5;
+      
+      // Add event listeners
+      scratchAudio.addEventListener('canplaythrough', function() {
+        console.log('[Audio] Scratch sound loaded successfully');
+        scratchAudioLoaded = true;
+      });
+      
+      scratchAudio.addEventListener('error', function(e) {
+        console.log('[Audio] Scratch sound file not found, audio disabled');
+        scratchAudio = null;
+        scratchAudioFailed = true;
+      });
+      
+      // Force load the audio
+      scratchAudio.load();
+      
+    } catch (error) {
+      console.log('[Audio] Error initializing scratch sound:', error.message);
+      scratchAudioFailed = true;
+    }
+  }
   
   function playScratchSound() {
     try {
-      // Only create audio if it doesn't exist and we haven't failed before
-      if (!scratchAudio && typeof scratchAudio !== 'undefined') {
-        const scratchUrl = instantWin.plugin_url + '/assets/sound/scratch-sound.mp3';
-        scratchAudio = new Audio(scratchUrl);
-        scratchAudio.preload = 'auto';
-        scratchAudio.volume = 0.5; // Set volume to 50%
-        
-        // Add error event listener to handle audio loading issues
-        scratchAudio.addEventListener('error', function(e) {
-          console.log('[Audio] Scratch sound file not found, audio disabled');
-          scratchAudio = null; // Reset to allow retry
-        });
-        
-        // Add load event listener
-        scratchAudio.addEventListener('canplaythrough', function() {
-          console.log('[Audio] Scratch sound loaded successfully');
-        });
+      // Initialize audio if not done yet
+      if (!scratchAudio && !scratchAudioFailed) {
+        initScratchSound();
       }
       
-      // Check if audio exists and is ready to play
-      if (scratchAudio && scratchAudio.readyState >= 2) {
+      // Check if audio is ready to play
+      if (scratchAudio && scratchAudioLoaded && scratchAudio.readyState >= 2) {
         // Reset audio to beginning and play
         scratchAudio.currentTime = 0;
         scratchAudio.play().then(() => {
           console.log('[Audio] Scratch sound played successfully');
         }).catch((error) => {
           console.log('[Audio] Error playing scratch sound:', error.message);
+          // Try alternative method for autoplay restrictions
+          if (error.name === 'NotAllowedError') {
+            console.log('[Audio] Autoplay blocked, trying with user gesture...');
+            // This will be handled by the click event
+          }
         });
-      } else if (scratchAudio === null) {
-        // Audio failed to load, don't show warning
-        console.log('[Audio] Scratch sound not available');
+      } else if (scratchAudio && !scratchAudioLoaded) {
+        // Audio is still loading, try to play anyway (browser might allow it)
+        console.log('[Audio] Scratch sound still loading, attempting to play...');
+        scratchAudio.currentTime = 0;
+        scratchAudio.play().then(() => {
+          console.log('[Audio] Scratch sound played successfully (while loading)');
+        }).catch((error) => {
+          console.log('[Audio] Could not play scratch sound while loading:', error.message);
+          // Try to resume audio context if suspended
+          if (scratchAudio.context && scratchAudio.context.state === 'suspended') {
+            scratchAudio.context.resume().then(() => {
+              console.log('[Audio] Audio context resumed, trying to play again...');
+              scratchAudio.play().catch(e => {
+                console.log('[Audio] Still cannot play after context resume:', e.message);
+              });
+            });
+          }
+        });
+      } else if (scratchAudioFailed) {
+        console.log('[Audio] Scratch sound not available (failed to load)');
       } else {
-        // Audio is still loading
-        console.log('[Audio] Scratch sound still loading');
+        console.log('[Audio] Scratch sound not ready');
       }
       
     } catch (error) {
