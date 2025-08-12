@@ -2307,7 +2307,7 @@ jQuery(document).ready(function($) {
     
     const ticketNumber = $card.data('ticket');
     const $circles = $card.find('.scratch-circle');
-    const $container = $card.find('.scratch-circles-container');
+    const $container = $card.find('.scratch-card-container');
     
     // Skip if card is already revealed
     if ($card.attr('data-revealed') === 'true' || $card.hasClass('revealed')) {
