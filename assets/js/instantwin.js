@@ -2766,21 +2766,37 @@ jQuery(document).ready(function($) {
     try {
       // Create audio element if it doesn't exist
       if (!scratchAudio) {
-        scratchAudio = new Audio('assets/sound/scratch-sound.mp3');
+        const scratchUrl = instantWin.plugin_url + '/assets/sound/scratch-sound.mp3';
+        scratchAudio = new Audio(scratchUrl);
         scratchAudio.preload = 'auto';
         scratchAudio.volume = 0.5; // Set volume to 50%
+        
+        // Add error event listener to handle audio loading issues
+        scratchAudio.addEventListener('error', function(e) {
+          console.warn('[Audio] Audio file not found or not supported, skipping sound effect');
+          scratchAudio = null; // Reset to allow retry
+        });
       }
       
-      // Reset audio to beginning and play
-      scratchAudio.currentTime = 0;
-      scratchAudio.play().then(() => {
-        console.log('[Audio] Scratch sound played successfully');
-      }).catch((error) => {
-        console.error('[Audio] Error playing scratch sound:', error);
-      });
+      // Check if audio is ready to play
+      if (scratchAudio && scratchAudio.readyState >= 2) {
+        // Reset audio to beginning and play
+        scratchAudio.currentTime = 0;
+        scratchAudio.play().then(() => {
+          console.log('[Audio] Scratch sound played successfully');
+        }).catch((error) => {
+          console.warn('[Audio] Error playing scratch sound:', error.message);
+          // Don't show error for missing audio file
+          if (!error.message.includes('no supported sources')) {
+            console.error('[Audio] Audio playback error:', error);
+          }
+        });
+      } else {
+        console.warn('[Audio] Audio not ready, skipping sound effect');
+      }
       
     } catch (error) {
-      console.error('[Audio] Error creating or playing scratch sound:', error);
+      console.warn('[Audio] Error creating or playing scratch sound:', error.message);
     }
   }
   
