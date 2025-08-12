@@ -1363,15 +1363,25 @@ jQuery(document).ready(function($) {
     
     // Update card counter and auto-reveal button state when slider changes
     $('#scratch-cards-slider').on('translated.owl.carousel', function() {
-      updateCardCounter();
-      updateAutoRevealButtonState();
+      if (currentProduct && currentProduct.tickets) {
+        updateCardCounter();
+        updateAutoRevealButtonState();
+      }
     });
     
     // Initial card counter update
-    updateCardCounter();
+    if (currentProduct && currentProduct.tickets) {
+      updateCardCounter();
+    }
   }
   
   function updateCardCounter() {
+    // Check if currentProduct exists and has tickets
+    if (!currentProduct || !currentProduct.tickets) {
+      console.log('[Card Counter] No current product or tickets available, skipping counter update');
+      return;
+    }
+    
     const totalCards = currentProduct.tickets.length;
     
     // Don't update counter if only 1 card
@@ -1431,6 +1441,12 @@ jQuery(document).ready(function($) {
   }
 
   function updateRemainingCardsCount() {
+    // Check if currentProduct exists and has tickets
+    if (!currentProduct || !currentProduct.tickets) {
+      console.log('[Remaining Cards] No current product or tickets available, skipping count update');
+      return;
+    }
+    
     const totalCards = currentProduct.tickets.length;
     
     // Get all revealed cards and count unique ticket numbers
@@ -1784,6 +1800,12 @@ jQuery(document).ready(function($) {
   }
   
   function updateAutoRevealButtonState() {
+    // Check if currentProduct exists and has tickets
+    if (!currentProduct || !currentProduct.tickets) {
+      console.log('[Auto-Reveal] No current product or tickets available, skipping button update');
+      return;
+    }
+    
     const totalCards = currentProduct.tickets.length;
     
     // Don't update button if only 1 card (button won't exist)
@@ -4490,11 +4512,15 @@ jQuery(document).ready(function($) {
               $card.find('.circle-canvas').off('mousedown mousemove mouseup mouseleave');
             });
             
-            // Update auto-reveal button state
-            updateAutoRevealButtonState();
+            // Update auto-reveal button state (only if currentProduct exists)
+            if (currentProduct && currentProduct.tickets) {
+              updateAutoRevealButtonState();
+            }
             
-            // Update remaining cards count after reset
-            updateRemainingCardsCount();
+            // Update remaining cards count after reset (only if currentProduct exists)
+            if (currentProduct && currentProduct.tickets) {
+              updateRemainingCardsCount();
+            }
             
             // Reload the page to show fresh game state
             console.log('[Test] Refreshing page to show fresh game state...');
