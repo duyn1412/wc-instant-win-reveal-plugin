@@ -2661,6 +2661,9 @@ jQuery(document).ready(function($) {
         // Scratch the circle at this position
         scratchCircleAtPosition(circleX, circleY, ctx, canvas, window.scratchCardsData[ticketNumber].circles[circleIndex].scratchedAreas);
         
+        // Auto-save progress after each scratch
+        autoSaveScratchProgress(canvas, ctx, ticketNumber, circleIndex);
+        
         // Check if this circle is completed
         checkCircleScratchCompletion(canvas, ctx, ticketNumber, circleIndex);
       }
@@ -2693,6 +2696,65 @@ jQuery(document).ready(function($) {
     
     console.log('[Scratch] Scratching disabled for card');
   }
+  
+  function autoSaveScratchProgress(canvas, ctx, ticketNumber, circleIndex) {
+    try {
+      // Get canvas data as base64
+      const imageData = canvas.toDataURL();
+      
+      // Save to localStorage immediately
+      const key = `scratch_progress_${ticketNumber}_${circleIndex}`;
+      localStorage.setItem(key, imageData);
+      
+      console.log('[Auto-Save] Saved progress for ticket:', ticketNumber, 'circle:', circleIndex);
+      
+      // Also save to server via AJAX (debounced to avoid too many requests)
+      debouncedServerSave(ticketNumber, circleIndex, imageData);
+      
+    } catch (error) {
+      console.error('[Auto-Save] Error saving progress:', error);
+    }
+  }
+  
+  // Debounced server save to avoid too many AJAX requests
+  const debouncedServerSave = (function() {
+    const timeouts = {};
+    return function(ticketNumber, circleIndex, imageData) {
+      const key = `${ticketNumber}_${circleIndex}`;
+      
+      // Clear existing timeout
+      if (timeouts[key]) {
+        clearTimeout(timeouts[key]);
+      }
+      
+      // Set new timeout to save after 500ms of no activity
+      timeouts[key] = setTimeout(function() {
+        const data = {
+          action: 'save_scratch_progress',
+          nonce: instantWinAjax.nonce,
+          ticket_number: ticketNumber,
+          circle_index: circleIndex,
+          image_data: imageData
+        };
+        
+        $.ajax({
+          url: instantWinAjax.ajaxurl,
+          type: 'POST',
+          data: data,
+          success: function(response) {
+            if (response.success) {
+              console.log('[Auto-Save] Server save successful for ticket:', ticketNumber, 'circle:', circleIndex);
+            } else {
+              console.error('[Auto-Save] Server save failed:', response.data);
+            }
+          },
+          error: function(xhr, status, error) {
+            console.error('[Auto-Save] AJAX error saving progress:', error);
+          }
+        });
+      }, 500); // 500ms delay
+    };
+  })();
   
   function scratchCircle(e, ctx, canvas, scratchedAreas) {
     const rect = canvas.getBoundingClientRect();
