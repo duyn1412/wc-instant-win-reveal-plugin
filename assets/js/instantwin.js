@@ -2384,55 +2384,19 @@ jQuery(document).ready(function($) {
     }
   }
   
-  function checkCardScratchCompletion($card, ticketNumber) {
+    function checkCardScratchCompletion($card, ticketNumber) {
     console.log('[Scratch] Checking completion for card:', ticketNumber);
     
-    const $circles = $card.find('.scratch-circle');
-    let fullyScratchedCircles = 0;
-    const totalCircles = $circles.length;
+    // Check overlay cells instead of canvas
+    const $overlay = $card.find('.scratch-overlay');
+    const totalCells = $overlay.find('.scratch-overlay-cell').length;
+    const scratchedCells = $overlay.find('.scratch-overlay-cell.scratched').length;
     
-    $circles.each(function() {
-      const $circle = $(this);
-      const $canvas = $circle.find('.circle-canvas');
-      const canvas = $canvas[0];
-      const ctx = canvas.getContext('2d');
-      
-      // Get canvas data to check if mostly scratched
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      let transparentPixels = 0;
-      let totalPixels = data.length / 4;
-      
-      // Debug: Log first few pixels to understand the data
-      if (data.length > 0) {
-        console.log('[Scratch] First 4 pixels RGBA:', 
-          data[0], data[1], data[2], data[3], '|',
-          data[4], data[5], data[6], data[7], '|',
-          data[8], data[9], data[10], data[11], '|',
-          data[12], data[13], data[14], data[15]
-        );
-      }
-      
-      for (let i = 3; i < data.length; i += 4) {
-        if (data[i] < 128) { // Alpha channel < 128 means mostly transparent
-          transparentPixels++;
-        }
-      }
-      
-      const scratchPercentage = (transparentPixels / totalPixels) * 100;
-      console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%', 
-        '(transparent:', transparentPixels, 'total:', totalPixels, ')');
-      
-      if (scratchPercentage > 70) { // Consider scratched if > 70% transparent
-        fullyScratchedCircles++;
-      }
-    });
+    console.log('[Scratch] Overlay completion check:', scratchedCells, 'of', totalCells, 'cells scratched');
     
-    console.log('[Scratch] Fully scratched circles:', fullyScratchedCircles, 'of', totalCircles);
-    
-    // If all circles are scratched, reveal the card
-    if (fullyScratchedCircles >= totalCircles) {
-      console.log('[Scratch] All circles scratched! Revealing card:', ticketNumber);
+    // If all cells are scratched, reveal the card
+    if (scratchedCells >= totalCells) {
+      console.log('[Scratch] All cells scratched! Revealing card:', ticketNumber);
       
       const isWin = $card.find('.ticket-result-new').hasClass('win');
       
