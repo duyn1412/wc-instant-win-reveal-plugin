@@ -2351,6 +2351,7 @@ jQuery(document).ready(function($) {
       $overlay.on('mousedown touchstart', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         isScratching = true;
         console.log('[Scratch] Started continuous scratching');
         
@@ -2360,13 +2361,15 @@ jQuery(document).ready(function($) {
       
       $overlay.on('mousemove touchmove', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         if (isScratching) {
           scratchOverlayAtPosition(e);
         }
       });
       
-      $overlay.on('mouseup touchend', function(e) {
+      $overlay.on('mouseup touchend mouseleave', function(e) {
         e.preventDefault();
+        e.stopPropagation();
         if (isScratching) {
           isScratching = false;
           console.log('[Scratch] Stopped continuous scratching');
@@ -2376,19 +2379,23 @@ jQuery(document).ready(function($) {
         }
       });
       
-      function scratchOverlayAtPosition(e) {
+            function scratchOverlayAtPosition(e) {
         // Get mouse/touch position
         const rect = $overlay[0].getBoundingClientRect();
         const x = (e.clientX || e.touches[0].clientX) - rect.left;
         const y = (e.clientY || e.touches[0].clientY) - rect.top;
         
-                 // Find which cell is under the cursor/touch
-         const elementUnder = document.elementFromPoint(
-           e.clientX || e.touches[0].clientX, 
-           e.clientY || e.touches[0].clientY
-         );
-         
-         const $cell = $(elementUnder).closest('.scratch-overlay-cell');
+        console.log('[Scratch] Mouse position:', x, y);
+        
+        // Find which cell is under the cursor/touch
+        const elementUnder = document.elementFromPoint(
+          e.clientX || e.touches[0].clientX, 
+          e.clientY || e.touches[0].clientY
+        );
+        
+        console.log('[Scratch] Element under cursor:', elementUnder);
+        
+        const $cell = $(elementUnder).closest('.scratch-overlay-cell');
         if ($cell.length > 0 && !$cell.hasClass('scratched')) {
           const circleIndex = parseInt($cell.data('circle'));
           
@@ -2416,6 +2423,8 @@ jQuery(document).ready(function($) {
             console.log('[Scratch] All cells scratched! Hiding overlay');
             $overlay.addClass('scratched');
           }
+        } else {
+          console.log('[Scratch] No valid cell found or cell already scratched');
         }
       }
     }

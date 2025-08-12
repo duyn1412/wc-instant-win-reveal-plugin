@@ -1896,7 +1896,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   height: 100%;
   z-index: 10;
   cursor: crosshair;
-  pointer-events: auto;
+  pointer-events: all;
   background: #fff;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1909,6 +1909,10 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   padding: 20px;
   border-radius: 30px;
   transition: opacity 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .scratch-overlay.scratched {
@@ -1920,12 +1924,16 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   background: rgba(128, 128, 128, 0.8);
   border-radius: 50%;
   cursor: crosshair;
-  pointer-events: auto;
+  pointer-events: all;
   transition: background 0.3s ease;
   min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .scratch-overlay-cell:hover {
@@ -1934,6 +1942,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 
 .scratch-overlay-cell.scratched {
   background: transparent !important;
+  pointer-events: none;
 }
 
 #scratch-overlay-canvas {
