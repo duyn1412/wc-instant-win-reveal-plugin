@@ -2366,6 +2366,18 @@ jQuery(document).ready(function($) {
         // Save progress
         saveScratchProgress(null, null, ticketNumber, circleIndex);
         
+        // Check if all cells are scratched
+        const totalCells = $overlay.find('.scratch-overlay-cell').length;
+        const scratchedCells = $overlay.find('.scratch-overlay-cell.scratched').length;
+        
+        console.log('[Scratch] Progress:', scratchedCells, 'of', totalCells, 'cells scratched');
+        
+        // If all cells are scratched, hide the entire overlay
+        if (scratchedCells >= totalCells) {
+          console.log('[Scratch] All cells scratched! Hiding overlay');
+          $overlay.addClass('scratched');
+        }
+        
         // Check completion
         checkCardScratchCompletion($card, ticketNumber);
       });

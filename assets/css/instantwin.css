@@ -1908,6 +1908,12 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   margin: 0 auto;
   padding: 20px;
   border-radius: 30px;
+  transition: opacity 0.3s ease;
+}
+
+.scratch-overlay.scratched {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .scratch-overlay-cell {
