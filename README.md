@@ -54,24 +54,26 @@ wc-instant-win-reveal-plugin/
 
 ### Key Features
 
-- **Overlay Scratching System**: Uses CSS Grid with 12 clickable cells
+- **Canvas-Based Scratching**: Individual canvas elements for each circle
 - **Progress Persistence**: Saves scratch progress via AJAX and localStorage
-- **Responsive Grid**: 3x4 grid layout that adapts to screen size
+- **Responsive Design**: 3x4 grid layout that adapts to screen size
 - **Touch Support**: Full touch support for mobile devices
-- **Visual Feedback**: Smooth transitions and hover effects
+- **Visual Feedback**: Smooth scratch effects and completion detection
 
 ### CSS Classes
 
-- `.scratch-overlay`: Main overlay container with white background
-- `.scratch-overlay-cell`: Individual gray circles (12 total)
-- `.scratched`: Applied when a circle is scratched (transparent)
+- `.scratch-circle`: Individual circle container
+- `.circle-canvas`: Canvas element for scratching
+- `.circle-content`: Content underneath the scratch layer
 - `.scratch-circles-container`: Container for the scratch game
 
 ### JavaScript Functions
 
-- `createScratchOverlay()`: Creates the overlay with 12 cells
+- `initializeScratchCardCircles()`: Initializes canvas for each circle
+- `scratchCircle()`: Handles individual circle scratching
+- `checkCircleScratchCompletion()`: Checks if a circle is completed
+- `checkCardScratchCompletion()`: Checks if all circles are completed
 - `saveScratchProgress()`: Saves progress to server
-- `checkCardScratchCompletion()`: Checks if all circles are scratched
 - `initializeScratchSlider()`: Sets up the Owl Carousel
 
 ## Configuration
@@ -111,7 +113,7 @@ Prizes can be configured with:
 ### Version 1.0.0
 - Initial release
 - Scratch card functionality
-- Overlay scratching system
+- Canvas-based scratching system
 - Progress saving
 - Auto-reveal feature
 - Responsive design
