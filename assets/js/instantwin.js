@@ -2358,6 +2358,12 @@ jQuery(document).ready(function($) {
     let isScratching = false;
     
     $container.on('mousedown touchstart', function(e) {
+      // Check if card is already completed
+      if ($card.attr('data-revealed') === 'true' || $card.hasClass('revealed') || $container.hasClass('scratching-disabled')) {
+        console.log('[Scratch] Card already completed, scratching disabled');
+        return;
+      }
+      
       e.preventDefault();
       e.stopPropagation();
       isScratching = true;
@@ -2500,6 +2506,9 @@ jQuery(document).ready(function($) {
       
       // Update remaining cards count
       updateRemainingCardsCount();
+      
+      // Disable scratching for this card
+      disableScratchingForCard($card);
     }
   }
   
@@ -2667,6 +2676,22 @@ jQuery(document).ready(function($) {
     
     // Track scratched area
     scratchedAreas.push({ x: x, y: y, radius: 15 });
+  }
+  
+  function disableScratchingForCard($card) {
+    console.log('[Scratch] Disabling scratching for completed card');
+    
+    // Remove all scratch event listeners from container
+    const $container = $card.find('.scratch-card-container');
+    $container.off('mousedown touchstart mousemove touchmove mouseup touchend mouseleave');
+    
+    // Add a visual indicator that scratching is disabled
+    $container.addClass('scratching-disabled');
+    
+    // Optionally change cursor to indicate no more scratching
+    $container.css('cursor', 'default');
+    
+    console.log('[Scratch] Scratching disabled for card');
   }
   
   function scratchCircle(e, ctx, canvas, scratchedAreas) {

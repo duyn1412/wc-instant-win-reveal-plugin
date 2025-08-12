@@ -1899,6 +1899,16 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   z-index: 2;
 }
 
+/* Disabled scratching styling */
+.scratch-card-container.scratching-disabled {
+  cursor: default !important;
+  pointer-events: none;
+}
+
+.scratch-card-container.scratching-disabled .circle-canvas {
+  cursor: default !important;
+}
+
 /* Add subtle visual feedback when scratching */
 .scratch-circles-container:active {
   background-color: rgba(0, 124, 186, 0.05);
