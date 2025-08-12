@@ -2339,9 +2339,8 @@ jQuery(document).ready(function($) {
       canvas.width = 50;
       canvas.height = 50;
       
-      // Draw gray overlay
-      ctx.fillStyle = 'rgba(128, 128, 128, 0.8)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Draw gradient gray and silver background
+      drawGradientBackground(ctx, canvas);
       
       // Store canvas data
       window.scratchCardsData[ticketNumber].circles[index] = {
@@ -2404,19 +2403,19 @@ jQuery(document).ready(function($) {
     console.log('[Scratch] Checking circle completion:', circleIndex, 'for ticket:', ticketNumber);
     
     // Get image data to check scratch percentage
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
     
-    let transparentPixels = 0;
+      let transparentPixels = 0;
     const totalPixels = data.length / 4;
-    
-    for (let i = 3; i < data.length; i += 4) {
+      
+      for (let i = 3; i < data.length; i += 4) {
       if (data[i] === 0) { // Alpha channel is 0 (transparent)
-        transparentPixels++;
+          transparentPixels++;
+        }
       }
-    }
-    
-    const scratchPercentage = (transparentPixels / totalPixels) * 100;
+      
+      const scratchPercentage = (transparentPixels / totalPixels) * 100;
     console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%');
     
     // If more than 50% is scratched, consider it complete
@@ -2567,6 +2566,8 @@ jQuery(document).ready(function($) {
         img.src = savedData;
       } else {
         console.log('[Scratch] No saved progress found for ticket:', ticketNumber, 'circle:', circleId);
+        // Draw default gradient background
+        drawGradientBackground(ctx, canvas);
       }
     } catch (error) {
       console.error('[Scratch] Error restoring progress:', error);
@@ -2618,6 +2619,17 @@ jQuery(document).ready(function($) {
     } catch (error) {
       console.error('[Scratch] Error clearing all scratch progress:', error);
     }
+  }
+  
+  function drawGradientBackground(ctx, canvas) {
+    // Draw gradient gray and silver background
+    const gradient = ctx.createRadialGradient(25, 25, 0, 25, 25, 25);
+    gradient.addColorStop(0, '#C0C0C0');   // Silver center
+    gradient.addColorStop(0.7, '#A0A0A0'); // Light gray
+    gradient.addColorStop(1, '#808080');   // Dark gray edge
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   
   function scratchCircle(e, ctx, canvas, scratchedAreas) {
