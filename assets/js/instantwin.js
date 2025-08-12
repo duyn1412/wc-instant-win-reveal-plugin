@@ -2044,7 +2044,7 @@ jQuery(document).ready(function($) {
               <div class="circle-content ${row === winRow ? 'win-content' : 'lose-content'}">
                 ${icon}
               </div>
-              <!-- <canvas class="circle-canvas" width="50" height="50"></canvas> -->
+              <canvas class="circle-canvas" width="50" height="50"></canvas>
             </div>
           `);
         }
@@ -2102,7 +2102,7 @@ jQuery(document).ready(function($) {
               <div class="circle-content lose-content">
                 ${icon}
               </div>
-              <!-- <canvas class="circle-canvas" width="50" height="50"></canvas> -->
+              <canvas class="circle-canvas" width="50" height="50"></canvas>
             </div>
           `);
         }
@@ -2307,7 +2307,6 @@ jQuery(document).ready(function($) {
     
     const ticketNumber = $card.data('ticket');
     const $circles = $card.find('.scratch-circle');
-    const $container = $card.find('.scratch-circles-container');
     
     // Skip if card is already revealed
     if ($card.attr('data-revealed') === 'true' || $card.hasClass('revealed')) {
@@ -2324,126 +2323,157 @@ jQuery(document).ready(function($) {
       scratchedAreas: {}
     };
     
-    // Global scratch state for drag across multiple circles
-    let isGlobalScratching = false;
-    
-    // Create overlay for easy scratching
-    createScratchOverlay($container, ticketNumber);
-    
-    function createScratchOverlay($container, ticketNumber) {
-      // Create overlay with 12 cells
-      const overlayHTML = `
-        <div class="scratch-overlay">
-          ${Array.from({length: 12}, (_, i) => `
-            <div class="scratch-overlay-cell" data-circle="${i}"></div>
-          `).join('')}
-        </div>
-      `;
+    // Initialize each circle canvas
+    $circles.each(function(index) {
+      const $circle = $(this);
+      const canvas = $circle.find('.circle-canvas')[0];
       
-      $container.append(overlayHTML);
+      if (!canvas) {
+        console.warn('[Scratch] No canvas found for circle:', index);
+        return;
+      }
       
-      const $overlay = $container.find('.scratch-overlay');
-      console.log('[Scratch] Overlay created with 12 cells');
+      const ctx = canvas.getContext('2d');
       
-      // Add continuous scratch events to overlay
+      // Set canvas size
+      canvas.width = 50;
+      canvas.height = 50;
+      
+      // Draw gray overlay
+      ctx.fillStyle = 'rgba(128, 128, 128, 0.8)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Store canvas data
+      window.scratchCardsData[ticketNumber].circles[index] = {
+        canvas: canvas,
+        ctx: ctx,
+        scratchedAreas: []
+      };
+      
+      // Add scratch event listeners
       let isScratching = false;
       
-      $overlay.on('mousedown touchstart', function(e) {
+      canvas.addEventListener('mousedown', function(e) {
         e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
         isScratching = true;
-        console.log('[Scratch] Started continuous scratching');
-        
-        // Scratch at current position
-        scratchOverlayAtPosition(e);
+        scratchCircle(e, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
       });
       
-      $overlay.on('mousemove touchmove', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+      canvas.addEventListener('mousemove', function(e) {
         if (isScratching) {
-          scratchOverlayAtPosition(e);
+          scratchCircle(e, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
         }
       });
       
-      $overlay.on('mouseup touchend mouseleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+      canvas.addEventListener('mouseup', function() {
         if (isScratching) {
           isScratching = false;
-          console.log('[Scratch] Stopped continuous scratching');
-          
-          // Check completion
-          checkCardScratchCompletion($card, ticketNumber);
+          checkCircleScratchCompletion(canvas, ctx, ticketNumber, index);
         }
       });
       
-            function scratchOverlayAtPosition(e) {
-        // Get mouse/touch position
-        const rect = $overlay[0].getBoundingClientRect();
-        const x = (e.clientX || e.touches[0].clientX) - rect.left;
-        const y = (e.clientY || e.touches[0].clientY) - rect.top;
-        
-        console.log('[Scratch] Mouse position:', x, y);
-        
-        // Find which cell is under the cursor/touch
-        const elementUnder = document.elementFromPoint(
-          e.clientX || e.touches[0].clientX, 
-          e.clientY || e.touches[0].clientY
-        );
-        
-        console.log('[Scratch] Element under cursor:', elementUnder);
-        
-        const $cell = $(elementUnder).closest('.scratch-overlay-cell');
-        if ($cell.length > 0 && !$cell.hasClass('scratched')) {
-          const circleIndex = parseInt($cell.data('circle'));
-          
-          console.log('[Scratch] Scratched cell:', circleIndex, 'at position:', x, y);
-          
-          // Make cell transparent
-          $cell.addClass('scratched');
-          
-          // Mark as scratched in data
-          const scratchedAreas = window.scratchCardsData[ticketNumber].scratchedAreas[circleIndex] || [];
-          scratchedAreas.push({ x: 25, y: 25, radius: 25 }); // Default position
-          window.scratchCardsData[ticketNumber].scratchedAreas[circleIndex] = scratchedAreas;
-          
-          // Save progress
-          saveScratchProgress(null, null, ticketNumber, circleIndex);
-          
-          // Check if all cells are scratched
-          const totalCells = $overlay.find('.scratch-overlay-cell').length;
-          const scratchedCells = $overlay.find('.scratch-overlay-cell.scratched').length;
-          
-          console.log('[Scratch] Progress:', scratchedCells, 'of', totalCells, 'cells scratched');
-          
-          // If all cells are scratched, hide the entire overlay
-          if (scratchedCells >= totalCells) {
-            console.log('[Scratch] All cells scratched! Hiding overlay');
-            $overlay.addClass('scratched');
-          }
-        } else {
-          console.log('[Scratch] No valid cell found or cell already scratched');
+      // Touch events for mobile
+      canvas.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        isScratching = true;
+        const touch = e.touches[0];
+        scratchCircle(touch, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
+      });
+      
+      canvas.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        if (isScratching) {
+          const touch = e.touches[0];
+          scratchCircle(touch, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
         }
+      });
+      
+      canvas.addEventListener('touchend', function() {
+        if (isScratching) {
+          isScratching = false;
+          checkCircleScratchCompletion(canvas, ctx, ticketNumber, index);
+        }
+      });
+      
+      // Restore any saved progress
+      restoreScratchProgress(canvas, ctx, ticketNumber, index);
+    });
+  }
+  
+  function checkCircleScratchCompletion(canvas, ctx, ticketNumber, circleIndex) {
+    console.log('[Scratch] Checking circle completion:', circleIndex, 'for ticket:', ticketNumber);
+    
+    // Get image data to check scratch percentage
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    let transparentPixels = 0;
+    const totalPixels = data.length / 4;
+    
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] === 0) { // Alpha channel is 0 (transparent)
+        transparentPixels++;
       }
+    }
+    
+    const scratchPercentage = (transparentPixels / totalPixels) * 100;
+    console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%');
+    
+    // If more than 50% is scratched, consider it complete
+    if (scratchPercentage > 50) {
+      console.log('[Scratch] Circle completed:', circleIndex);
+      
+      // Clear the entire canvas to reveal the result
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Save progress
+      saveScratchProgress(canvas, ctx, ticketNumber, circleIndex);
+      
+      // Check if all circles are completed
+      checkCardScratchCompletion(ticketNumber);
     }
   }
   
-    function checkCardScratchCompletion($card, ticketNumber) {
-    console.log('[Scratch] Checking completion for card:', ticketNumber);
+  function checkCardScratchCompletion(ticketNumber) {
+    console.log('[Scratch] Checking card completion for ticket:', ticketNumber);
     
-    // Check overlay cells instead of canvas
-    const $overlay = $card.find('.scratch-overlay');
-    const totalCells = $overlay.find('.scratch-overlay-cell').length;
-    const scratchedCells = $overlay.find('.scratch-overlay-cell.scratched').length;
+    if (!window.scratchCardsData || !window.scratchCardsData[ticketNumber]) {
+      console.warn('[Scratch] No scratch data found for ticket:', ticketNumber);
+      return;
+    }
     
-    console.log('[Scratch] Overlay completion check:', scratchedCells, 'of', totalCells, 'cells scratched');
+    const cardData = window.scratchCardsData[ticketNumber];
+    const totalCircles = cardData.circles.length;
+    let completedCircles = 0;
     
-    // If all cells are scratched, reveal the card
-    if (scratchedCells >= totalCells) {
-      console.log('[Scratch] All cells scratched! Revealing card:', ticketNumber);
+    // Check each circle
+    cardData.circles.forEach((circleData, index) => {
+      if (circleData && circleData.canvas) {
+        const ctx = circleData.ctx;
+        const imageData = ctx.getImageData(0, 0, circleData.canvas.width, circleData.canvas.height);
+        const data = imageData.data;
+        
+        let transparentPixels = 0;
+        for (let i = 3; i < data.length; i += 4) {
+          if (data[i] === 0) {
+            transparentPixels++;
+          }
+        }
+        
+        const scratchPercentage = (transparentPixels / (data.length / 4)) * 100;
+        if (scratchPercentage > 50) {
+          completedCircles++;
+        }
+      }
+    });
+    
+    console.log('[Scratch] Completed circles:', completedCircles, 'of', totalCircles);
+    
+    // If all circles are completed, reveal the card
+    if (completedCircles >= totalCircles) {
+      console.log('[Scratch] All circles completed! Revealing card:', ticketNumber);
       
+      const $card = $(`.scratch-card-individual[data-ticket="${ticketNumber}"]`);
       const isWin = $card.find('.ticket-result-new').hasClass('win');
       
       // Get prize from win content or from ticket data
@@ -2515,20 +2545,10 @@ jQuery(document).ready(function($) {
   })();
 
   function saveScratchProgress(canvas, ctx, ticketNumber, circleId) {
-    // Skip if canvas is null (using overlay)
-    if (!canvas) {
-      console.log('[Scratch] Skipping save progress - using overlay, no canvas');
-      return;
-    }
     debouncedSaveProgress(canvas, ctx, ticketNumber, circleId);
   }
   
   function restoreScratchProgress(canvas, ctx, ticketNumber, circleId) {
-    // Skip if canvas is null (using overlay)
-    if (!canvas) {
-      console.log('[Scratch] Skipping restore progress - using overlay, no canvas');
-      return;
-    }
     
     try {
       const key = `scratch_progress_${ticketNumber}_${circleId}`;
@@ -2618,14 +2638,13 @@ jQuery(document).ready(function($) {
   function revealAllScratchCards() {
     console.log('[Scratch] Revealing all scratch circles');
     
-    // Disabled: Using overlay instead of individual canvases
-    // $('.circle-canvas').each(function() {
-    //   const canvas = this;
-    //   const ctx = canvas.getContext('2d');
-    //   
-    //   // Clear the canvas to reveal the result underneath
-    //   ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // });
+    $('.circle-canvas').each(function() {
+      const canvas = this;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear the canvas to reveal the result underneath
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
     
     // Show completion notification
     showScratchCompletionNotification();

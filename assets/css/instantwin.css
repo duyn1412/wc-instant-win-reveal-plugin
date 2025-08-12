@@ -1887,66 +1887,16 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Scratch overlay styling */
-.scratch-overlay {
+/* Scratch circle canvas styling */
+.circle-canvas {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 10;
-  cursor: crosshair;
-  pointer-events: all;
-  background: #fff;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: 5px;
-  justify-content: center;
-  align-items: center;
-  max-width: 260px;
-  margin: 0 auto;
-  padding: 20px;
-  border-radius: 30px;
-  transition: opacity 0.3s ease;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-.scratch-overlay.scratched {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.scratch-overlay-cell {
-  background: rgba(128, 128, 128, 0.8);
   border-radius: 50%;
   cursor: crosshair;
-  pointer-events: all;
-  transition: background 0.3s ease;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-}
-
-.scratch-overlay-cell:hover {
-  background: rgba(100, 100, 100, 0.9);
-}
-
-.scratch-overlay-cell.scratched {
-  background: transparent !important;
-  pointer-events: none;
-}
-
-#scratch-overlay-canvas {
-  display: none;
+  z-index: 2;
 }
 
 /* Add subtle visual feedback when scratching */
