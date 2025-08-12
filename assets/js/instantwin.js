@@ -1280,6 +1280,9 @@ jQuery(document).ready(function($) {
     
     // Add auto-reveal button event handler
     $('#auto-reveal-btn').click(function() {
+      // Play scratch sound
+      playScratchSound();
+      
       const $button = $(this);
       const $slider = $('#scratch-cards-slider');
       const currentIndex = $slider.find('.owl-item.active.center').index();
@@ -2755,6 +2758,31 @@ jQuery(document).ready(function($) {
       }, 500); // 500ms delay
     };
   })();
+  
+  // Audio functionality for scratch sound
+  let scratchAudio = null;
+  
+  function playScratchSound() {
+    try {
+      // Create audio element if it doesn't exist
+      if (!scratchAudio) {
+        scratchAudio = new Audio('assets/sound/scratch-sound.mp3');
+        scratchAudio.preload = 'auto';
+        scratchAudio.volume = 0.5; // Set volume to 50%
+      }
+      
+      // Reset audio to beginning and play
+      scratchAudio.currentTime = 0;
+      scratchAudio.play().then(() => {
+        console.log('[Audio] Scratch sound played successfully');
+      }).catch((error) => {
+        console.error('[Audio] Error playing scratch sound:', error);
+      });
+      
+    } catch (error) {
+      console.error('[Audio] Error creating or playing scratch sound:', error);
+    }
+  }
   
   function scratchCircle(e, ctx, canvas, scratchedAreas) {
     const rect = canvas.getBoundingClientRect();
