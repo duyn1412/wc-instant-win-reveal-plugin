@@ -1800,9 +1800,12 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 }
 
 .owl-carousel .owl-item {
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
   transform-style: preserve-3d;
   will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
 }
 
 /* Active/Center card */
@@ -1811,6 +1814,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   opacity: 1;
   transform: scale(1) translateZ(0px);
   margin-right: -250px;
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 /* Side cards - behind the center card */
@@ -1818,6 +1822,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   z-index: 1;
   opacity: 0.6;
   transform: scale(.8) translateZ(-50px);
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 /* Single card - no opacity effect */
@@ -1825,6 +1830,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   opacity: 1;
   transform: scale(1);
   z-index: 1;
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 /* Non-active cards */
@@ -1832,6 +1838,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   z-index: 0;
   opacity: 0;
   transform: scale(0.8) translateZ(-100px);
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
 /* Ensure center card is always on top */
@@ -1841,7 +1848,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 
 /* Smooth navigation button transitions */
 .owl-carousel .owl-nav button {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
   transform: scale(1);
 }
 
@@ -1851,7 +1858,8 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 
 /* Prevent layout shifts during transitions */
 .owl-carousel .owl-stage {
-  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  will-change: transform;
 }
 
 /* Smooth opacity transitions for better visual flow */
@@ -1859,6 +1867,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   -moz-backface-visibility: hidden;
+  -ms-backface-visibility: hidden;
 }
 
 /* Special styling for 2 cards to show stacked effect */
@@ -1866,13 +1875,37 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   opacity: 0.6;
   transform: scale(0.8) translateZ(-50px);
   z-index: 1;
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Performance optimizations for smoother animations */
+.owl-carousel {
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  -moz-perspective: 1000px;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+}
+
+/* Hardware acceleration for smoother transitions */
+.owl-carousel .owl-item,
+.owl-carousel .owl-stage,
+.scratch-card-individual {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
 }
 
 /* Individual card styling for depth */
 .scratch-card-individual {
   transform-style: preserve-3d;
   backface-visibility: hidden;
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
+  -ms-backface-visibility: hidden;
+  transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
   will-change: transform, opacity;
 }
 
