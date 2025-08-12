@@ -2307,6 +2307,7 @@ jQuery(document).ready(function($) {
     
     const ticketNumber = $card.data('ticket');
     const $circles = $card.find('.scratch-circle');
+    const $container = $card.find('.scratch-circles-container');
     
     // Skip if card is already revealed
     if ($card.attr('data-revealed') === 'true' || $card.hasClass('revealed')) {
@@ -2349,53 +2350,41 @@ jQuery(document).ready(function($) {
         scratchedAreas: []
       };
       
-      // Add scratch event listeners
-      let isScratching = false;
-      
-      canvas.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        isScratching = true;
-        scratchCircle(e, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
-      });
-      
-      canvas.addEventListener('mousemove', function(e) {
-        if (isScratching) {
-          scratchCircle(e, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
-        }
-      });
-      
-      canvas.addEventListener('mouseup', function() {
-        if (isScratching) {
-          isScratching = false;
-          checkCircleScratchCompletion(canvas, ctx, ticketNumber, index);
-        }
-      });
-      
-      // Touch events for mobile
-      canvas.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-        isScratching = true;
-        const touch = e.touches[0];
-        scratchCircle(touch, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
-      });
-      
-      canvas.addEventListener('touchmove', function(e) {
-        e.preventDefault();
-        if (isScratching) {
-          const touch = e.touches[0];
-          scratchCircle(touch, ctx, canvas, window.scratchCardsData[ticketNumber].circles[index].scratchedAreas);
-        }
-      });
-      
-      canvas.addEventListener('touchend', function() {
-        if (isScratching) {
-          isScratching = false;
-          checkCircleScratchCompletion(canvas, ctx, ticketNumber, index);
-        }
-      });
-      
       // Restore any saved progress
       restoreScratchProgress(canvas, ctx, ticketNumber, index);
+    });
+    
+    // Add container-level scratch events for continuous scratching
+    let isScratching = false;
+    
+    $container.on('mousedown touchstart', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      isScratching = true;
+      console.log('[Scratch] Started continuous scratching on container');
+      
+      // Scratch at current position
+      scratchContainerAtPosition(e, $container, ticketNumber);
+    });
+    
+    $container.on('mousemove touchmove', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isScratching) {
+        scratchContainerAtPosition(e, $container, ticketNumber);
+      }
+    });
+    
+    $container.on('mouseup touchend mouseleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isScratching) {
+        isScratching = false;
+        console.log('[Scratch] Stopped continuous scratching on container');
+        
+        // Check completion for all circles
+        checkCardScratchCompletion(ticketNumber);
+      }
     });
   }
   
@@ -2632,12 +2621,45 @@ jQuery(document).ready(function($) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
   
-  function scratchCircle(e, ctx, canvas, scratchedAreas) {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.offsetX || (e.clientX - rect.left);
-    const y = e.offsetY || (e.clientY - rect.top);
+  function scratchContainerAtPosition(e, $container, ticketNumber) {
+    // Get mouse/touch position relative to container
+    const rect = $container[0].getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
     
-    // Create scratch effect with smaller brush for circles
+    console.log('[Scratch] Container position:', x, y);
+    
+    // Find which circle is under the cursor/touch
+    const elementUnder = document.elementFromPoint(
+      e.clientX || e.touches[0].clientX, 
+      e.clientY || e.touches[0].clientY
+    );
+    
+    const $circle = $(elementUnder).closest('.scratch-circle');
+    if ($circle.length > 0) {
+      const circleIndex = parseInt($circle.data('circle'));
+      const canvas = $circle.find('.circle-canvas')[0];
+      const ctx = canvas.getContext('2d');
+      
+      if (canvas && ctx) {
+        // Get position relative to the specific circle canvas
+        const circleRect = canvas.getBoundingClientRect();
+        const circleX = (e.clientX || e.touches[0].clientX) - circleRect.left;
+        const circleY = (e.clientY || e.touches[0].clientY) - circleRect.top;
+        
+        console.log('[Scratch] Scratching circle:', circleIndex, 'at position:', circleX, circleY);
+        
+        // Scratch the circle at this position
+        scratchCircleAtPosition(circleX, circleY, ctx, canvas, window.scratchCardsData[ticketNumber].circles[circleIndex].scratchedAreas);
+        
+        // Check if this circle is completed
+        checkCircleScratchCompletion(canvas, ctx, ticketNumber, circleIndex);
+      }
+    }
+  }
+  
+  function scratchCircleAtPosition(x, y, ctx, canvas, scratchedAreas) {
+    // Create scratch effect
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
     ctx.arc(x, y, 15, 0, Math.PI * 2);
@@ -2645,6 +2667,15 @@ jQuery(document).ready(function($) {
     
     // Track scratched area
     scratchedAreas.push({ x: x, y: y, radius: 15 });
+  }
+  
+  function scratchCircle(e, ctx, canvas, scratchedAreas) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.offsetX || (e.clientX - rect.left);
+    const y = e.offsetY || (e.clientY - rect.top);
+    
+    // Use the new scratch function
+    scratchCircleAtPosition(x, y, ctx, canvas, scratchedAreas);
   }
   
   function revealAllScratchCards() {
