@@ -1225,7 +1225,7 @@ jQuery(document).ready(function($) {
     const scratchHTML = `
       <div class="scratch-container">
         <div class="scratch-header">
-          <h3>you have <span id="remaining-cards-count">${currentProduct.tickets.length}</span> <span id="remaining-cards-text">${currentProduct.tickets.length === 1 ? 'scratchcard' : 'scratchcards'}</span> remaining</h3>
+          <h3>You have <span id="remaining-cards-count">${currentProduct.tickets.length}</span> <span id="remaining-cards-text">${currentProduct.tickets.length === 1 ? 'scratchcard' : 'scratchcards'}</span> remaining</h3>
           <p>Scratch now to see if you've won!</p>
         </div>
                 <div class="scratch-slider-container">
