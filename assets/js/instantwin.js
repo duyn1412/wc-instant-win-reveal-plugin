@@ -2345,42 +2345,79 @@ jQuery(document).ready(function($) {
       const $overlay = $container.find('.scratch-overlay');
       console.log('[Scratch] Overlay created with 12 cells');
       
-      // Add scratch events to each cell
-      $overlay.find('.scratch-overlay-cell').on('mousedown touchstart', function(e) {
+      // Add continuous scratch events to overlay
+      let isScratching = false;
+      
+      $overlay.on('mousedown touchstart', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        isScratching = true;
+        console.log('[Scratch] Started continuous scratching');
         
-        const $cell = $(this);
-        const circleIndex = parseInt($cell.data('circle'));
-        
-        console.log('[Scratch] Scratched cell:', circleIndex);
-        
-        // Make cell transparent
-        $cell.addClass('scratched');
-        
-        // Mark as scratched in data
-        const scratchedAreas = window.scratchCardsData[ticketNumber].scratchedAreas[circleIndex] || [];
-        scratchedAreas.push({ x: 25, y: 25, radius: 25 }); // Default position
-        window.scratchCardsData[ticketNumber].scratchedAreas[circleIndex] = scratchedAreas;
-        
-        // Save progress
-        saveScratchProgress(null, null, ticketNumber, circleIndex);
-        
-        // Check if all cells are scratched
-        const totalCells = $overlay.find('.scratch-overlay-cell').length;
-        const scratchedCells = $overlay.find('.scratch-overlay-cell.scratched').length;
-        
-        console.log('[Scratch] Progress:', scratchedCells, 'of', totalCells, 'cells scratched');
-        
-        // If all cells are scratched, hide the entire overlay
-        if (scratchedCells >= totalCells) {
-          console.log('[Scratch] All cells scratched! Hiding overlay');
-          $overlay.addClass('scratched');
-        }
-        
-        // Check completion
-        checkCardScratchCompletion($card, ticketNumber);
+        // Scratch at current position
+        scratchOverlayAtPosition(e);
       });
+      
+      $overlay.on('mousemove touchmove', function(e) {
+        e.preventDefault();
+        if (isScratching) {
+          scratchOverlayAtPosition(e);
+        }
+      });
+      
+      $overlay.on('mouseup touchend', function(e) {
+        e.preventDefault();
+        if (isScratching) {
+          isScratching = false;
+          console.log('[Scratch] Stopped continuous scratching');
+          
+          // Check completion
+          checkCardScratchCompletion($card, ticketNumber);
+        }
+      });
+      
+      function scratchOverlayAtPosition(e) {
+        // Get mouse/touch position
+        const rect = $overlay[0].getBoundingClientRect();
+        const x = (e.clientX || e.touches[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches[0].clientY) - rect.top;
+        
+                 // Find which cell is under the cursor/touch
+         const elementUnder = document.elementFromPoint(
+           e.clientX || e.touches[0].clientX, 
+           e.clientY || e.touches[0].clientY
+         );
+         
+         const $cell = $(elementUnder).closest('.scratch-overlay-cell');
+        if ($cell.length > 0 && !$cell.hasClass('scratched')) {
+          const circleIndex = parseInt($cell.data('circle'));
+          
+          console.log('[Scratch] Scratched cell:', circleIndex, 'at position:', x, y);
+          
+          // Make cell transparent
+          $cell.addClass('scratched');
+          
+          // Mark as scratched in data
+          const scratchedAreas = window.scratchCardsData[ticketNumber].scratchedAreas[circleIndex] || [];
+          scratchedAreas.push({ x: 25, y: 25, radius: 25 }); // Default position
+          window.scratchCardsData[ticketNumber].scratchedAreas[circleIndex] = scratchedAreas;
+          
+          // Save progress
+          saveScratchProgress(null, null, ticketNumber, circleIndex);
+          
+          // Check if all cells are scratched
+          const totalCells = $overlay.find('.scratch-overlay-cell').length;
+          const scratchedCells = $overlay.find('.scratch-overlay-cell.scratched').length;
+          
+          console.log('[Scratch] Progress:', scratchedCells, 'of', totalCells, 'cells scratched');
+          
+          // If all cells are scratched, hide the entire overlay
+          if (scratchedCells >= totalCells) {
+            console.log('[Scratch] All cells scratched! Hiding overlay');
+            $overlay.addClass('scratched');
+          }
+        }
+      }
     }
   }
   
