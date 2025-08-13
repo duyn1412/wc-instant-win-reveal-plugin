@@ -1290,7 +1290,7 @@ jQuery(document).ready(function($) {
     
     // Add auto-reveal button event handler
     $('#auto-reveal-btn').click(function() {
-      // Force initialize and play scratch sound on first click
+      // Force initialize audio on first click
       console.log('[Auto-Reveal] Button clicked - initializing audio...');
       
       // Resume audio context if suspended (required for autoplay)
@@ -1303,11 +1303,6 @@ jQuery(document).ready(function($) {
       if (!scratchAudio && !scratchAudioFailed) {
         initScratchSound();
       }
-      
-      // Small delay to ensure audio is ready, then play
-      setTimeout(() => {
-        playScratchSound();
-      }, 50);
       
       const $button = $(this);
       const $slider = $('#scratch-cards-slider');
@@ -1323,6 +1318,32 @@ jQuery(document).ready(function($) {
       
       const ticketNumber = $currentCard.data('ticket');
       const isWin = $currentCard.find('.ticket-result-new').hasClass('win');
+      
+      // Play appropriate sound based on result
+      setTimeout(() => {
+        if (isWin) {
+          // Play WIN sound instead of scratch sound
+          console.log('[Auto-Reveal] Win detected - playing WIN sound');
+          if (gameSounds && gameSounds.winning) {
+            gameSounds.winning.currentTime = 0;
+            gameSounds.winning.play().then(() => {
+              console.log('[Auto-Reveal] WIN sound played successfully');
+            }).catch((error) => {
+              console.log('[Auto-Reveal] Error playing WIN sound:', error.message);
+              // Fallback to scratch sound if WIN sound fails
+              playScratchSound();
+            });
+          } else {
+            // Fallback to scratch sound if WIN sound not available
+            console.log('[Auto-Reveal] WIN sound not available, using scratch sound');
+            playScratchSound();
+          }
+        } else {
+          // Play scratch sound for non-win
+          console.log('[Auto-Reveal] Non-win detected - playing scratch sound');
+          playScratchSound();
+        }
+      }, 50);
       
       // Get prize from win content or from ticket data
       let prize = '';

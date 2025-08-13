@@ -1593,7 +1593,7 @@ p.d-won-p {
   align-items: center;
   max-width: 260px;
   margin: 0 auto;
-  background: #fff;
+  background: #fff !important;
   position: relative;
   padding: 20px;
   border-radius: 30px;
