@@ -2778,55 +2778,12 @@ jQuery(document).ready(function($) {
       const key = `scratch_progress_${ticketNumber}_${circleIndex}`;
       localStorage.setItem(key, imageData);
       
-      console.log('[Auto-Save] Saved progress for ticket:', ticketNumber, 'circle:', circleIndex);
-      
-      // Also save to server via AJAX (debounced to avoid too many requests)
-      debouncedServerSave(ticketNumber, circleIndex, imageData);
+      console.log('[Auto-Save] Saved progress to localStorage for ticket:', ticketNumber, 'circle:', circleIndex);
       
     } catch (error) {
       console.error('[Auto-Save] Error saving progress:', error);
     }
   }
-  
-  // Debounced server save to avoid too many AJAX requests
-  const debouncedServerSave = (function() {
-    const timeouts = {};
-    return function(ticketNumber, circleIndex, imageData) {
-      const key = `${ticketNumber}_${circleIndex}`;
-      
-      // Clear existing timeout
-      if (timeouts[key]) {
-        clearTimeout(timeouts[key]);
-      }
-      
-      // Set new timeout to save after 500ms of no activity
-      timeouts[key] = setTimeout(function() {
-        const data = {
-          action: 'save_scratch_progress',
-          nonce: instantWinAjax.nonce,
-          ticket_number: ticketNumber,
-          circle_index: circleIndex,
-          image_data: imageData
-        };
-        
-        $.ajax({
-          url: instantWinAjax.ajaxurl,
-          type: 'POST',
-          data: data,
-          success: function(response) {
-            if (response.success) {
-              console.log('[Auto-Save] Server save successful for ticket:', ticketNumber, 'circle:', circleIndex);
-            } else {
-              console.error('[Auto-Save] Server save failed:', response.data);
-            }
-          },
-          error: function(xhr, status, error) {
-            console.error('[Auto-Save] AJAX error saving progress:', error);
-          }
-        });
-      }, 500); // 500ms delay
-    };
-  })();
   
   // Audio functionality for scratch sound
   
@@ -2943,7 +2900,7 @@ jQuery(document).ready(function($) {
   }
   
   function saveScratchSliderProgress() {
-    console.log('[Scratch] Saving scratch slider progress');
+    console.log('[Scratch] Saving scratch slider progress to localStorage');
     
     if (!window.scratchCardsData) {
       console.log('[Scratch] No scratch cards data available');
@@ -2964,89 +2921,63 @@ jQuery(document).ready(function($) {
       };
     });
     
-    // Save to server via AJAX
-    $.ajax({
-      url: instantWin.ajax_url,
-      type: 'POST',
-      data: {
-        action: 'instantwin_save_scratch_progress',
-        nonce: instantWin.nonce,
-        order_id: instantWin.order_id,
-        product_id: currentProduct.product_id,
-        scratch_progress: JSON.stringify(progressData)
-      },
-      success: function(response) {
-        if (response.success) {
-          console.log('[Scratch] Slider progress saved successfully');
-          showProgressSavedNotification();
-        } else {
-          console.error('[Scratch] Server error saving progress:', response.data);
-        }
-      },
-      error: function(xhr, status, error) {
-        console.error('[Scratch] AJAX error saving progress:', error);
-      }
-    });
+    // Save to localStorage instead of server
+    try {
+      localStorage.setItem('scratch_slider_progress', JSON.stringify(progressData));
+      console.log('[Scratch] Slider progress saved to localStorage successfully');
+      showProgressSavedNotification();
+    } catch (error) {
+      console.error('[Scratch] Error saving progress to localStorage:', error);
+    }
   }
   
   function loadScratchSliderProgress() {
-    console.log('[Scratch] Loading scratch slider progress');
+    console.log('[Scratch] Loading scratch slider progress from localStorage');
     
-    $.ajax({
-      url: instantWin.ajax_url,
-      type: 'POST',
-      data: {
-        action: 'instantwin_load_scratch_progress',
-        nonce: instantWin.nonce,
-        order_id: instantWin.order_id,
-        product_id: currentProduct.product_id
-      },
-      success: function(response) {
-        if (response.success && response.data && response.data.scratch_progress) {
-          try {
-            const progressData = JSON.parse(response.data.scratch_progress);
-            
-            if (progressData.cardsData) {
-              console.log('[Scratch] Restoring scratch progress for', Object.keys(progressData.cardsData).length, 'cards');
+    try {
+      const savedProgress = localStorage.getItem('scratch_slider_progress');
+      
+      if (savedProgress) {
+        const progressData = JSON.parse(savedProgress);
+        
+        if (progressData.cardsData) {
+          console.log('[Scratch] Restoring scratch progress for', Object.keys(progressData.cardsData).length, 'cards');
+          
+          // Restore scratch progress for each card (circles)
+          Object.keys(progressData.cardsData).forEach(ticketNumber => {
+            const cardData = progressData.cardsData[ticketNumber];
+            if (window.scratchCardsData && window.scratchCardsData[ticketNumber]) {
+              const scratchData = window.scratchCardsData[ticketNumber];
               
-              // Restore scratch progress for each card (circles)
-              Object.keys(progressData.cardsData).forEach(ticketNumber => {
-                const cardData = progressData.cardsData[ticketNumber];
-                if (window.scratchCardsData && window.scratchCardsData[ticketNumber]) {
-                  const scratchData = window.scratchCardsData[ticketNumber];
+              // Restore each circle's scratch areas
+              Object.keys(cardData.scratchedAreas).forEach(circleId => {
+                const circleAreas = cardData.scratchedAreas[circleId];
+                if (scratchData.circles[circleId]) {
+                  const ctx = scratchData.circles[circleId].ctx;
                   
-                  // Restore each circle's scratch areas
-                  Object.keys(cardData.scratchedAreas).forEach(circleId => {
-                    const circleAreas = cardData.scratchedAreas[circleId];
-                    if (scratchData.circles[circleId]) {
-                      const ctx = scratchData.circles[circleId].ctx;
-                      
-                      // Apply scratched areas
-                      ctx.globalCompositeOperation = 'destination-out';
-                      circleAreas.forEach(area => {
-                        ctx.beginPath();
-                        ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
-                        ctx.fill();
-                      });
-                      ctx.globalCompositeOperation = 'source-over';
-                      
-                      // Update local scratch data
-                      scratchData.circles[circleId].scratchedAreas = circleAreas;
-                      scratchData.scratchedAreas[circleId] = circleAreas;
-                    }
+                  // Apply scratched areas
+                  ctx.globalCompositeOperation = 'destination-out';
+                  circleAreas.forEach(area => {
+                    ctx.beginPath();
+                    ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
+                    ctx.fill();
                   });
+                  ctx.globalCompositeOperation = 'source-over';
+                  
+                  // Update local scratch data
+                  scratchData.circles[circleId].scratchedAreas = circleAreas;
+                  scratchData.scratchedAreas[circleId] = circleAreas;
                 }
               });
             }
-          } catch (e) {
-            console.error('[Scratch] Error parsing progress data:', e);
-          }
+          });
         }
-      },
-      error: function(xhr, status, error) {
-        console.error('[Scratch] AJAX error loading progress:', error);
+      } else {
+        console.log('[Scratch] No saved progress found in localStorage');
       }
-    });
+    } catch (error) {
+      console.error('[Scratch] Error loading progress from localStorage:', error);
+    }
   }
   
   function showProgressSavedNotification() {
