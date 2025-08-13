@@ -2489,6 +2489,11 @@ jQuery(document).ready(function($) {
     if (scratchPercentage > 30) {
       console.log('[Scratch] Circle completed:', circleIndex, 'with', scratchPercentage.toFixed(2) + '%');
       
+      // Mark this circle as completed in the data structure
+      if (window.scratchCardsData && window.scratchCardsData[ticketNumber] && window.scratchCardsData[ticketNumber].circles[circleIndex]) {
+        window.scratchCardsData[ticketNumber].circles[circleIndex].completed = true;
+      }
+      
       // Clear the entire canvas to reveal the result
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
@@ -2515,20 +2520,28 @@ jQuery(document).ready(function($) {
     // Check each circle
     cardData.circles.forEach((circleData, index) => {
       if (circleData && circleData.canvas) {
-        const ctx = circleData.ctx;
-        const imageData = ctx.getImageData(0, 0, circleData.canvas.width, circleData.canvas.height);
-        const data = imageData.data;
-        
-        let transparentPixels = 0;
-        for (let i = 3; i < data.length; i += 4) {
-          if (data[i] === 0) {
-            transparentPixels++;
-          }
-        }
-        
-        const scratchPercentage = (transparentPixels / (data.length / 4)) * 100;
-        if (scratchPercentage > 30) {
+        // Check if circle is marked as completed
+        if (circleData.completed) {
           completedCircles++;
+          console.log('[Scratch] Circle', index, 'is marked as completed');
+        } else {
+          // Fallback: check canvas pixels for circles not yet marked
+          const ctx = circleData.ctx;
+          const imageData = ctx.getImageData(0, 0, circleData.canvas.width, circleData.canvas.height);
+          const data = imageData.data;
+          
+          let transparentPixels = 0;
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i] === 0) {
+              transparentPixels++;
+            }
+          }
+          
+          const scratchPercentage = (transparentPixels / (data.length / 4)) * 100;
+          if (scratchPercentage > 30) {
+            completedCircles++;
+            console.log('[Scratch] Circle', index, 'completed by pixel check:', scratchPercentage.toFixed(2) + '%');
+          }
         }
       }
     });
