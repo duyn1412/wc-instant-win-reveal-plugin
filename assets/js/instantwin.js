@@ -2581,9 +2581,28 @@ jQuery(document).ready(function($) {
       // Clear scratch progress for this card
       clearScratchProgress(ticketNumber);
       
-      // Show win notification if it's a win
+      // Show win notification and play win sound if it's a win
       if (isWin) {
         showAutoRevealWinNotification(prize);
+        
+        // Play win sound (same as auto-reveal button)
+        try {
+          if (gameSounds && gameSounds.winning) {
+            gameSounds.winning.play().then(() => {
+              console.log('[Scratch] Win sound played successfully for scratched card');
+            }).catch((error) => {
+              console.log('[Scratch] Error playing win sound:', error.message);
+              // Fallback to scratch sound if win sound fails
+              playScratchSound();
+            });
+          } else {
+            console.log('[Scratch] Win sound not available, using scratch sound');
+            playScratchSound();
+          }
+        } catch (error) {
+          console.log('[Scratch] Error with win sound:', error.message);
+          playScratchSound();
+        }
       }
       
       // Update auto-reveal button state
