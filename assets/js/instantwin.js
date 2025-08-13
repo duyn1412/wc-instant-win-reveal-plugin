@@ -2470,24 +2470,24 @@ jQuery(document).ready(function($) {
     console.log('[Scratch] Checking circle completion:', circleIndex, 'for ticket:', ticketNumber);
     
     // Get image data to check scratch percentage
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
     
-      let transparentPixels = 0;
+    let transparentPixels = 0;
     const totalPixels = data.length / 4;
-      
-      for (let i = 3; i < data.length; i += 4) {
+    
+    for (let i = 3; i < data.length; i += 4) {
       if (data[i] === 0) { // Alpha channel is 0 (transparent)
-          transparentPixels++;
-        }
+        transparentPixels++;
       }
-      
-      const scratchPercentage = (transparentPixels / totalPixels) * 100;
+    }
+    
+    const scratchPercentage = (transparentPixels / totalPixels) * 100;
     console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%');
     
-    // If more than 50% is scratched, consider it complete
-    if (scratchPercentage > 50) {
-      console.log('[Scratch] Circle completed:', circleIndex);
+    // If more than 30% is scratched, consider it complete (lowered from 50%)
+    if (scratchPercentage > 30) {
+      console.log('[Scratch] Circle completed:', circleIndex, 'with', scratchPercentage.toFixed(2) + '%');
       
       // Clear the entire canvas to reveal the result
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2527,7 +2527,7 @@ jQuery(document).ready(function($) {
         }
         
         const scratchPercentage = (transparentPixels / (data.length / 4)) * 100;
-        if (scratchPercentage > 50) {
+        if (scratchPercentage > 30) {
           completedCircles++;
         }
       }
@@ -2737,6 +2737,7 @@ jQuery(document).ready(function($) {
         autoSaveScratchProgress(canvas, ctx, ticketNumber, circleIndex);
         
         // Check if this circle is completed
+        console.log('[Scratch] Calling checkCircleScratchCompletion for circle:', circleIndex);
         checkCircleScratchCompletion(canvas, ctx, ticketNumber, circleIndex);
       }
     }
