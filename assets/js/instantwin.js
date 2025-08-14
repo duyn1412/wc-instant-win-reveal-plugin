@@ -2230,7 +2230,7 @@ jQuery(document).ready(function($) {
     // Determine items to show based on total cards
     let itemsToShow = 3; // Show 3 items for stacked effect
     let loopEnabled = totalCards > 1; // Enable loop if more than 1 card
-    let marginValue = -200; // Negative margin for stacked effect
+    let marginValue = 0; // No margin for single item display
     
     if (totalCards < 3) {
       itemsToShow = totalCards;
