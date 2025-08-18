@@ -505,8 +505,54 @@ class WC_Instant_Win_Reveal {
             var_dump($order_id);
             echo '<h4>Product Data:</h4>';
             var_dump($tickets_per_product);
-            echo '<h4>Prizes Data:</h4>';
-            var_dump($prizes);
+            
+            // Show prizes data for each product
+            echo '<h4>Prizes Data by Product:</h4>';
+            foreach ($tickets_per_product as $product_id => $product_data) {
+                echo '<h5>Product ID: ' . $product_id . '</h5>';
+                
+                // Get prizes for this specific product
+                $product_prizes = [];
+                foreach ($order->get_items() as $item) {
+                    $pid = $item->get_product_id();
+                    if ($pid == $product_id && function_exists('have_rows') && have_rows('instant_tickets_prizes', $pid)) {
+                        foreach (get_field('instant_tickets_prizes', $pid) as $w) {
+                            $prize_name = $w['instant_prize'];
+                            $prize_image = '';
+                            
+                            // Get prize image
+                            if (isset($w['icon_prize']) && !empty($w['icon_prize'])) {
+                                if (is_array($w['icon_prize']) && isset($w['icon_prize']['url'])) {
+                                    $prize_image = $w['icon_prize']['url'];
+                                } elseif (is_string($w['icon_prize'])) {
+                                    $prize_image = $w['icon_prize'];
+                                } elseif (is_numeric($w['icon_prize'])) {
+                                    $prize_image = wp_get_attachment_image_url($w['icon_prize'], 'full');
+                                }
+                            } elseif (isset($w['d_prize_image']) && !empty($w['d_prize_image'])) {
+                                if (is_array($w['d_prize_image']) && isset($w['d_prize_image']['url'])) {
+                                    $prize_image = $w['d_prize_image']['url'];
+                                } elseif (is_string($w['d_prize_image'])) {
+                                    $prize_image = $w['d_prize_image'];
+                                } elseif (is_numeric($w['d_prize_image'])) {
+                                    $prize_image = wp_get_attachment_image_url($w['d_prize_image'], 'full');
+                                }
+                            }
+                            
+                            $product_prizes[] = [
+                                'name' => $prize_name,
+                                'image' => $prize_image,
+                                'wheel_color' => isset($w['wheel_color']) ? $w['wheel_color'] : '#0096ff',
+                                'wheel_text_color' => isset($w['wheel_text_color']) ? $w['wheel_text_color'] : '#000'
+                            ];
+                        }
+                        break; // Found the product, no need to continue
+                    }
+                }
+                
+                var_dump($product_prizes);
+            }
+            
             echo '</div>';
         }
     }
