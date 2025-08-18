@@ -1836,7 +1836,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 .owl-carousel .owl-item.active:not(.center) {
   z-index: 1;
   opacity: 0.6;
-  transform: scale(.8) translateZ(-50px);
+  transform: scale(.9) translateZ(-50px);
   transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
@@ -1854,7 +1854,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
 .owl-carousel .owl-item:not(.active) {
   z-index: 0;
   opacity: 0.6;
-  transform: scale(0.8) translateZ(-100px);
+  transform: scale(0.9) translateZ(-100px);
   transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
