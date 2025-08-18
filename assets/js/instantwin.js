@@ -343,9 +343,11 @@ jQuery(document).ready(function($) {
       },
       dataType: 'json'
     }).done(function(response) {
+      console.log('[AJAX] Response from instantwin_get_game_data:', response);
       if (response.success) {
         products = response.tickets || [];
         allPrizes = response.prizes || [];
+        console.log('[AJAX] All prizes from response:', allPrizes);
         const revealedProducts = response.revealed_products || [];
         
         // Update nonce from response for future requests
