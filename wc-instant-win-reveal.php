@@ -989,6 +989,12 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         foreach ( $order->get_items() as $item ) {
             $pid = $item->get_product_id();
             error_log("[AJAX] Processing product ID: " . $pid);
+            
+            // Special debug for wheel game (product 56459)
+            if ($pid == 56459) {
+                error_log("[AJAX] 🎯 Found wheel game product 56459!");
+            }
+            
             if ( function_exists( 'have_rows' ) && have_rows( 'instant_tickets_prizes', $pid ) ) {
                 foreach ( get_field( 'instant_tickets_prizes', $pid ) as $w ) {
                     $prize_name = $w['instant_prize'];

@@ -348,6 +348,12 @@ jQuery(document).ready(function($) {
         products = response.tickets || [];
         allPrizes = response.prizes || [];
         console.log('[AJAX] All prizes from response:', allPrizes);
+        
+        // Debug: Check which product is wheel game
+        const wheelProduct = products.find(p => p.mode === 'wheel');
+        if (wheelProduct) {
+          console.log('[AJAX] 🎯 Wheel game found:', wheelProduct.product_id, wheelProduct.title);
+        }
         const revealedProducts = response.revealed_products || [];
         
         // Update nonce from response for future requests
@@ -709,6 +715,7 @@ jQuery(document).ready(function($) {
     // Debug: Check where prizes data comes from
     console.log('[Game] All prizes data from PHP:', allPrizes);
     console.log('[Game] Current product ID:', currentProduct.product_id);
+    console.log('[Game] Current product mode:', currentProduct.mode);
     
     // Debug: Check if we're getting the right data for this product
     console.log('[Game] Looking for product ID:', currentProduct.product_id, 'in allPrizes');
