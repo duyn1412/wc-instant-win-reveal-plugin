@@ -716,6 +716,7 @@ jQuery(document).ready(function($) {
         // Debug: Log prize data
         console.log('[Wheel] Prize data:', prize);
         console.log('[Wheel] Prize wheel_color:', prize.wheel_color);
+        console.log('[Wheel] Prize wheel_text_color:', prize.wheel_text_color);
         
         // Extract only the monetary value (e.g., "Golden Palm - £1000" becomes "£1000")
         if (prizeText.includes('£')) {
@@ -726,12 +727,14 @@ jQuery(document).ready(function($) {
         }
         
         const fillColor = prize.wheel_color || '#0096ff';
+        const textColor = prize.wheel_text_color || '#000';
         console.log('[Wheel] Using fill color:', fillColor);
+        console.log('[Wheel] Using text color:', textColor);
         
         allSegments.push({
           'fillStyle': fillColor,
           'text': prizeText,
-          'textFillStyle': '#000',
+          'textFillStyle': textColor,
           'textFontSize': 18,
           'strokeStyle': '#ffffff',
           'lineWidth': 3

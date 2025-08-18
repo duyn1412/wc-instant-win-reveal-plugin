@@ -403,7 +403,8 @@ class WC_Instant_Win_Reveal {
                     $prizes[] = [
                         'name' => $prize_name,
                         'image' => $prize_image,
-                        'wheel_color' => isset($w['wheel_color']) ? $w['wheel_color'] : '#0096ff'
+                        'wheel_color' => isset($w['wheel_color']) ? $w['wheel_color'] : '#0096ff',
+                        'wheel_text_color' => isset($w['wheel_text_color']) ? $w['wheel_text_color'] : '#000'
                     ];
                 }
             }
