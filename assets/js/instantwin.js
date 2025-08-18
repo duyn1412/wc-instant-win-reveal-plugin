@@ -687,6 +687,7 @@ jQuery(document).ready(function($) {
       <div class="wheel-container" style="position:relative;max-width:400px;margin:0 auto;">
         <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel"></canvas>
         <div id="${pointerId}" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #e74c3c;z-index:2;"></div>
+        <div class="wheel-center-knob" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:35px;height:35px;background:radial-gradient(circle, #f8f9fa, #e9ecef);border:2px solid #dee2e6;border-radius:50%;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,0.2);"></div>
       </div>
     `);
     
@@ -726,7 +727,7 @@ jQuery(document).ready(function($) {
           'textFillStyle': '#000',
           'textFontSize': 18,
           'strokeStyle': '#ffffff',
-          'lineWidth': 3
+          'lineWidth': 5
         });
       } else {
         // Only one X segment
@@ -736,7 +737,7 @@ jQuery(document).ready(function($) {
           'textFillStyle': '#666',
           'textFontSize': 20,
           'strokeStyle': '#ffffff',
-          'lineWidth': 3
+          'lineWidth': 5
         });
       }
     }
