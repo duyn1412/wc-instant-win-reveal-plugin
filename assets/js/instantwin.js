@@ -712,25 +712,26 @@ jQuery(document).ready(function($) {
       return;
     }
     
-    // Debug: Check where prizes data comes from
-    console.log('[Game] All prizes data from PHP:', allPrizes);
+    // Debug: Check prizes data from current product
+    console.log('[Game] Current product prizes:', currentProduct.prizes);
     console.log('[Game] Current product ID:', currentProduct.product_id);
     console.log('[Game] Current product mode:', currentProduct.mode);
     
-    // Debug: Check if we're getting the right data for this product
-    console.log('[Game] Looking for product ID:', currentProduct.product_id, 'in allPrizes');
-    allPrizes.forEach((prize, index) => {
+    // Use prizes from current product instead of global allPrizes
+    const productPrizes = currentProduct.prizes || [];
+    console.log('[Game] Product prizes count:', productPrizes.length);
+    productPrizes.forEach((prize, index) => {
       console.log('[Game] Prize', index, ':', prize.name, 'wheel_color:', prize.wheel_color, 'wheel_text_color:', prize.wheel_text_color);
     });
     
     // Build segments alternating between prizes and X (only one X)
     const allSegments = [];
-    const maxSegments = allPrizes.length + 1; // All prizes + 1 X
+    const maxSegments = productPrizes.length + 1; // All prizes + 1 X
     
     for (let i = 0; i < maxSegments; i++) {
-      if (i < allPrizes.length) {
+      if (i < productPrizes.length) {
         // Prize segment
-        const prize = allPrizes[i];
+        const prize = productPrizes[i];
         let prizeText = typeof prize === 'string' ? prize : (prize.name || 'Prize');
         
         // Debug: Log prize data

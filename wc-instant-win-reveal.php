@@ -968,33 +968,8 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                 }
             }
             
-            if ( !empty( $product_tickets ) || $game_hidden ) {
-                $tickets_per_product[] = [
-                    'product_id' => $pid,
-                    'title' => $title,
-                    'mode' => $mode,
-                    'tickets' => $product_tickets,
-                    'image_url' => $image_url,
-                    'background_image' => $background_image,
-                    'price' => (float) $price,
-                    'quantity' => (int) $quantity,
-                    'total_tickets' => count($product_tickets),
-                    'currency' => get_woocommerce_currency_symbol(),
-                ];
-            }
-        }
-        
-        // Get prizes with images
-        $prizes = [];
-        foreach ( $order->get_items() as $item ) {
-            $pid = $item->get_product_id();
-            error_log("[AJAX] Processing product ID: " . $pid);
-            
-            // Special debug for wheel game (product 56459)
-            if ($pid == 56459) {
-                error_log("[AJAX] 🎯 Found wheel game product 56459!");
-            }
-            
+            // Get prizes for this specific product
+            $product_prizes = [];
             if ( function_exists( 'have_rows' ) && have_rows( 'instant_tickets_prizes', $pid ) ) {
                 foreach ( get_field( 'instant_tickets_prizes', $pid ) as $w ) {
                     $prize_name = $w['instant_prize'];
@@ -1019,7 +994,7 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                         }
                     }
                     
-                    $prizes[] = [
+                    $product_prizes[] = [
                         'name' => $prize_name,
                         'image' => $prize_image,
                         'wheel_color' => isset($w['wheel_color']) ? $w['wheel_color'] : '#0096ff',
@@ -1027,18 +1002,25 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                     ];
                 }
             }
-        }
-        
-        // Remove duplicates based on prize name
-        $unique_prizes = [];
-        $seen_names = [];
-        foreach ( $prizes as $prize ) {
-            if ( !in_array( $prize['name'], $seen_names ) ) {
-                $unique_prizes[] = $prize;
-                $seen_names[] = $prize['name'];
+            
+            if ( !empty( $product_tickets ) || $game_hidden ) {
+                $tickets_per_product[] = [
+                    'product_id' => $pid,
+                    'title' => $title,
+                    'mode' => $mode,
+                    'tickets' => $product_tickets,
+                    'prizes' => $product_prizes, // Add prizes to each product
+                    'image_url' => $image_url,
+                    'background_image' => $background_image,
+                    'price' => (float) $price,
+                    'quantity' => (int) $quantity,
+                    'total_tickets' => count($product_tickets),
+                    'currency' => get_woocommerce_currency_symbol(),
+                ];
             }
         }
-        $prizes = $unique_prizes;
+        
+        // Prizes are now included in each product individually
         
         if (empty($tickets_per_product)) {
             wp_die( json_encode( [
