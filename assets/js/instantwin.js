@@ -685,7 +685,7 @@ jQuery(document).ready(function($) {
     const pointerId = 'instantwin-wheel-pointer';
     $('#instantwin-game-canvas').append(`
       <div class="wheel-container" style="position:relative;max-width:400px;margin:0 auto;">
-        <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel"></canvas>
+        <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel" style="display:block;"></canvas>
         <div id="${pointerId}" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #e74c3c;z-index:2;"></div>
         <div class="wheel-center-knob" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:35px;height:35px;background:radial-gradient(circle, #f8f9fa, #e9ecef);border:2px solid #dee2e6;border-radius:50%;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,0.2);"></div>
       </div>
@@ -782,6 +782,23 @@ jQuery(document).ready(function($) {
       wheelInstance.draw();
       console.log('[Game] Wheel redrawn with new colors');
     }
+    
+    // Debug: Check if canvas is actually showing the colors
+    setTimeout(() => {
+      const canvas = document.getElementById(canvasId);
+      if (canvas) {
+        console.log('[Game] Canvas element found:', canvas);
+        console.log('[Game] Canvas width:', canvas.width, 'height:', canvas.height);
+        
+        // Check if there are any CSS rules affecting the canvas
+        const computedStyle = window.getComputedStyle(canvas);
+        console.log('[Game] Canvas computed styles:', {
+          backgroundColor: computedStyle.backgroundColor,
+          border: computedStyle.border,
+          filter: computedStyle.filter
+        });
+      }
+    }, 1000);
     
     // Spins remaining counter above spin button
     const spinsRemaining = $(`<div class="plays-left">spins remaining: ${currentProduct.tickets.length}</div>`);
