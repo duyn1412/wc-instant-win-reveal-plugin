@@ -516,8 +516,9 @@ class WC_Instant_Win_Reveal {
                 echo 'Product ID: ' . $pid . ' | Product Name: ' . $item->get_name() . '<br>';
             }
             
-            foreach ($tickets_per_product as $product_id => $product_data) {
-                echo '<h5>Product ID: ' . $product_id . '</h5>';
+            foreach ($tickets_per_product as $index => $product_data) {
+                $actual_product_id = $product_data['product_id'];
+                echo '<h5>Product ID: ' . $actual_product_id . ' (Index: ' . $index . ')</h5>';
                 
                 // Get prizes for this specific product
                 $product_prizes = [];
@@ -529,14 +530,14 @@ class WC_Instant_Win_Reveal {
                 }
                 
                 // Debug: Check if product has ACF fields
-                if (!have_rows('instant_tickets_prizes', $product_id)) {
-                    echo '<p style="color: orange;">No ACF fields found for product ID: ' . $product_id . '</p>';
+                if (!have_rows('instant_tickets_prizes', $actual_product_id)) {
+                    echo '<p style="color: orange;">No ACF fields found for product ID: ' . $actual_product_id . '</p>';
                     continue;
                 }
                 
-                echo '<p style="color: green;">Found ACF fields for product ID: ' . $product_id . '</p>';
+                echo '<p style="color: green;">Found ACF fields for product ID: ' . $actual_product_id . '</p>';
                 
-                foreach (get_field('instant_tickets_prizes', $product_id) as $w) {
+                foreach (get_field('instant_tickets_prizes', $actual_product_id) as $w) {
                     $prize_name = $w['instant_prize'];
                     $prize_image = '';
                     
