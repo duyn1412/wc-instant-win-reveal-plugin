@@ -2066,7 +2066,7 @@ jQuery(document).ready(function($) {
         
         // If not found, try to find by different property names
         if (!prizeObj) {
-          prizeObj = allPrizes.find(p => {
+          prizeObj = productPrizes.find(p => {
             if (typeof p === 'object' && p) {
               return p.prize_name === prize || 
                      p.title === prize || 
@@ -2196,6 +2196,7 @@ jQuery(document).ready(function($) {
     } else {
       // Lose ticket: No row has all same icons (3 rows x 4 cols)
       // Get all available prize icons/images
+      const productPrizes = currentProduct.prizes || [];
       const availableIcons = [];
       if (productPrizes && productPrizes.length > 0) {
         productPrizes.forEach(prize => {
