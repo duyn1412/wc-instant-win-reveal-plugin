@@ -2050,11 +2050,12 @@ jQuery(document).ready(function($) {
       // Find winning prize icon/image
       let winIcon = '🎁'; // default icon
       console.log('[Scratch] Looking for winning prize:', prize);
-      console.log('[Scratch] Available prizes:', allPrizes);
+      console.log('[Scratch] Current product prizes:', currentProduct.prizes);
       
-      if (allPrizes && allPrizes.length > 0) {
+      const productPrizes = currentProduct.prizes || [];
+      if (productPrizes && productPrizes.length > 0) {
         // First try to find exact match
-        let prizeObj = allPrizes.find(p => {
+        let prizeObj = productPrizes.find(p => {
           if (typeof p === 'string') {
             return p === prize;
           } else if (p && p.name) {
@@ -2106,7 +2107,7 @@ jQuery(document).ready(function($) {
               console.log('[Scratch] Using d_prize_image:', winIcon);
             } else {
               // If no icon/image found, try using any available prize icon as fallback
-              const firstPrizeWithIcon = allPrizes.find(p => p && p.icon);
+              const firstPrizeWithIcon = productPrizes.find(p => p && p.icon);
               if (firstPrizeWithIcon) {
                 winIcon = firstPrizeWithIcon.icon;
                 console.log('[Scratch] Using fallback icon from first prize:', winIcon);
@@ -2114,11 +2115,11 @@ jQuery(document).ready(function($) {
             }
           }
         } else {
-          console.warn('[Scratch] Prize not found in allPrizes:', prize);
+          console.warn('[Scratch] Prize not found in product prizes:', prize);
           console.log('[Scratch] Trying first available prize as fallback');
           
           // Use first available prize icon as fallback
-          const fallbackPrize = allPrizes[0];
+          const fallbackPrize = productPrizes[0];
           if (fallbackPrize) {
             if (typeof fallbackPrize === 'string') {
               winIcon = fallbackPrize;
@@ -2131,7 +2132,7 @@ jQuery(document).ready(function($) {
           }
         }
       } else {
-        console.warn('[Scratch] No allPrizes data available');
+        console.warn('[Scratch] No product prizes data available');
       }
       
       console.log('[Scratch] Final winIcon:', winIcon);
@@ -2141,8 +2142,8 @@ jQuery(document).ready(function($) {
       
       // Get all available prize icons/images (excluding the winning prize for other rows)
       const availableIcons = [];
-      if (allPrizes && allPrizes.length > 0) {
-        allPrizes.forEach(prizeItem => {
+      if (productPrizes && productPrizes.length > 0) {
+        productPrizes.forEach(prizeItem => {
           // Skip the winning prize for other rows
           if (typeof prizeItem === 'string') {
             if (prizeItem !== prize) {
@@ -2196,8 +2197,8 @@ jQuery(document).ready(function($) {
       // Lose ticket: No row has all same icons (3 rows x 4 cols)
       // Get all available prize icons/images
       const availableIcons = [];
-      if (allPrizes && allPrizes.length > 0) {
-        allPrizes.forEach(prize => {
+      if (productPrizes && productPrizes.length > 0) {
+        productPrizes.forEach(prize => {
           let prizeIcon = '🎁'; // default
           if (typeof prize === 'string') {
             prizeIcon = prize;
@@ -2256,11 +2257,12 @@ jQuery(document).ready(function($) {
   }
   
   function createAvailablePrizesHTML() {
-    if (!allPrizes || allPrizes.length === 0) {
+    const productPrizes = currentProduct.prizes || [];
+    if (!productPrizes || productPrizes.length === 0) {
       return '<p class="no-prizes">No prizes available</p>';
     }
     
-    const prizesHTML = allPrizes.map(prize => {
+    const prizesHTML = productPrizes.map(prize => {
       let prizeIcon = '🎁'; // default icon
       let prizeName = '';
       
@@ -3614,14 +3616,15 @@ jQuery(document).ready(function($) {
   
   function populateSlotsReels() {
     console.log('[Slots] Populating reels with symbols');
-    console.log('[Slots] Available prizes:', allPrizes);
+    console.log('[Slots] Current product prizes:', currentProduct.prizes);
     
     // Get all available symbols (prize images + losing symbols)
     const symbols = [];
     
-    // Add prize symbols (from d_prize_image)
-    if (allPrizes && allPrizes.length > 0) {
-      allPrizes.forEach(prize => {
+    // Add prize symbols (from current product prizes)
+    const productPrizes = currentProduct.prizes || [];
+    if (productPrizes && productPrizes.length > 0) {
+      productPrizes.forEach(prize => {
         // Handle both old format (string) and new format (object with name/image)
         if (typeof prize === 'string') {
           // Old format - just prize name
@@ -3724,11 +3727,12 @@ jQuery(document).ready(function($) {
     if (isWin && prize && prize.trim() !== '') {
       // Find the prize symbol
       let prizeSymbol = null;
-      if (allPrizes && allPrizes.length > 0) {
+      const productPrizes = currentProduct.prizes || [];
+      if (productPrizes && productPrizes.length > 0) {
         console.log('[Slots] Looking for prize:', prize);
-        console.log('[Slots] Available prizes:', allPrizes);
+        console.log('[Slots] Current product prizes:', productPrizes);
         
-        prizeSymbol = allPrizes.find(p => {
+        prizeSymbol = productPrizes.find(p => {
           // Handle both old format (string) and new format (object)
           if (typeof p === 'string') {
             const match = p === prize;
@@ -3763,8 +3767,8 @@ jQuery(document).ready(function($) {
           console.log('[Slots] Win condition - all 3 reels will show same prize:', prize, 'as text');
         }
       } else {
-        // Fallback: Create a prize symbol from the prize name if not found in allPrizes
-        console.log('[Slots] Prize not found in allPrizes, creating fallback symbol for:', prize);
+        // Fallback: Create a prize symbol from the prize name if not found in product prizes
+        console.log('[Slots] Prize not found in product prizes, creating fallback symbol for:', prize);
         
         // Decode the prize text to fix encoding issues
         let decodedPrize = prize;
@@ -3786,7 +3790,7 @@ jQuery(document).ready(function($) {
         
         // Try to find a matching prize by partial name match
         let bestMatch = null;
-        if (allPrizes && allPrizes.length > 0) {
+        if (productPrizes && productPrizes.length > 0) {
           // First, decode the prize name to get the actual text
           let decodedPrizeName = prize;
           try {
@@ -3797,7 +3801,7 @@ jQuery(document).ready(function($) {
           
           console.log('[Slots] Looking for match with decoded prize name:', decodedPrizeName);
           
-          bestMatch = allPrizes.find(p => {
+          bestMatch = productPrizes.find(p => {
             if (typeof p === 'string') {
               // Extract key words from both strings for comparison
               const prizeWords = decodedPrizeName.toLowerCase().split(' ').filter(word => word.length > 2);
@@ -3844,7 +3848,7 @@ jQuery(document).ready(function($) {
       }
     } else {
       // Losing combination - show different non-aligned prize symbols (not X)
-      const availablePrizeSymbols = allPrizes.filter(prize => {
+      const availablePrizeSymbols = productPrizes.filter(prize => {
         if (typeof prize === 'object' && prize.image && prize.image.trim() !== '') {
           return true;
         }
