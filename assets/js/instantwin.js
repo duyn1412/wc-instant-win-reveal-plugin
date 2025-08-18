@@ -737,14 +737,16 @@ jQuery(document).ready(function($) {
         console.log('[Wheel] Using fill color:', fillColor);
         console.log('[Wheel] Using text color:', textColor);
         
-        allSegments.push({
+        const segment = {
           'fillStyle': fillColor,
           'text': prizeText,
           'textFillStyle': textColor,
           'textFontSize': 18,
           'strokeStyle': '#ffffff',
           'lineWidth': 3
-        });
+        };
+        console.log('[Wheel] Creating segment for', prizeText, 'with textFillStyle:', textColor);
+        allSegments.push(segment);
       } else {
         // Only one X segment
         allSegments.push({
