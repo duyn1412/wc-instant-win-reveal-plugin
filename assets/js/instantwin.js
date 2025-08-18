@@ -657,6 +657,7 @@ jQuery(document).ready(function($) {
   
   function setupWheelGame() {
     console.log('[Game] Setting up wheel game');
+    console.log('[Game] Current product ID:', currentProduct.product_id);
     
     // Remove any old canvas and create professional wheel container
     $('#instantwin-game-canvas').empty();
@@ -714,6 +715,7 @@ jQuery(document).ready(function($) {
         let prizeText = typeof prize === 'string' ? prize : (prize.name || 'Prize');
         
         // Debug: Log prize data
+        console.log('[Wheel] Product ID:', currentProduct.product_id);
         console.log('[Wheel] Prize data:', prize);
         console.log('[Wheel] Prize wheel_color:', prize.wheel_color);
         console.log('[Wheel] Prize wheel_text_color:', prize.wheel_text_color);
