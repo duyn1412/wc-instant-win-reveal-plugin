@@ -73,3 +73,19 @@ fi
 echo -e "${GREEN}🎉 Deployment completed successfully!${NC}"
 echo -e "${YELLOW}📝 Files have been uploaded to the server.${NC}"
 echo -e "${YELLOW}🔄 Please refresh your browser to see the changes.${NC}"
+
+# Auto open files in editor for manual save (if needed)
+echo -e "${YELLOW}📝 Opening files in editor for manual save...${NC}"
+if command -v code &> /dev/null; then
+    code "$SERVER_DIR/assets/js/instantwin.js"
+    code "$SERVER_DIR/assets/css/instantwin.css"
+    code "$SERVER_DIR/wc-instant-win-reveal.php"
+    echo -e "${GREEN}✅ Files opened in VS Code${NC}"
+elif command -v subl &> /dev/null; then
+    subl "$SERVER_DIR/assets/js/instantwin.js"
+    subl "$SERVER_DIR/assets/css/instantwin.css"
+    subl "$SERVER_DIR/wc-instant-win-reveal.php"
+    echo -e "${GREEN}✅ Files opened in Sublime Text${NC}"
+else
+    echo -e "${YELLOW}⚠️  Please manually open and save files in your editor${NC}"
+fi
