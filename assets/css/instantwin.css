@@ -592,6 +592,7 @@ button.w-btn.us-btn-style_1.instant-reveal-trigger:hover {
   transform-style: preserve-3d;
   backface-visibility: hidden;
   perspective: 1000px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .wheel-container {
