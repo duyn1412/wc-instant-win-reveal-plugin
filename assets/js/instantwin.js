@@ -708,6 +708,12 @@ jQuery(document).ready(function($) {
     console.log('[Game] All prizes data from PHP:', allPrizes);
     console.log('[Game] Current product ID:', currentProduct.product_id);
     
+    // Debug: Check if we're getting the right data for this product
+    console.log('[Game] Looking for product ID:', currentProduct.product_id, 'in allPrizes');
+    allPrizes.forEach((prize, index) => {
+      console.log('[Game] Prize', index, ':', prize.name, 'wheel_color:', prize.wheel_color, 'wheel_text_color:', prize.wheel_text_color);
+    });
+    
     // Build segments alternating between prizes and X (only one X)
     const allSegments = [];
     const maxSegments = allPrizes.length + 1; // All prizes + 1 X
