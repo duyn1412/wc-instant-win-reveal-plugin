@@ -402,7 +402,8 @@ class WC_Instant_Win_Reveal {
                     
                     $prizes[] = [
                         'name' => $prize_name,
-                        'image' => $prize_image
+                        'image' => $prize_image,
+                        'wheel_color' => isset($w['wheel_color']) ? $w['wheel_color'] : '#0096ff'
                     ];
                 }
             }
@@ -935,7 +936,8 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                     
                     $prizes[] = [
                         'name' => $prize_name,
-                        'image' => $prize_image
+                        'image' => $prize_image,
+                        'wheel_color' => isset($w['wheel_color']) ? $w['wheel_color'] : '#0096ff'
                     ];
                 }
             }

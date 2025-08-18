@@ -684,9 +684,9 @@ jQuery(document).ready(function($) {
     const canvasId = 'instantwin-wheel-canvas';
     const pointerId = 'instantwin-wheel-pointer';
     $('#instantwin-game-canvas').append(`
-      <div class="wheel-container" style="position:relative;max-width:600px;margin:0 auto;">
-        <canvas id="${canvasId}" width="600" height="600" aria-label="Prize Wheel"></canvas>
-        <div id="${pointerId}" style="position:absolute;top:18px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:20px solid #e74c3c;z-index:2;"></div>
+      <div class="wheel-container" style="position:relative;max-width:400px;margin:0 auto;">
+        <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel"></canvas>
+        <div id="${pointerId}" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #e74c3c;z-index:2;"></div>
       </div>
     `);
     
@@ -702,29 +702,41 @@ jQuery(document).ready(function($) {
       return;
     }
     
-    // Build segments alternating between prizes and X
+    // Build segments alternating between prizes and X (only one X)
     const allSegments = [];
-    const maxSegments = Math.max(allPrizes.length * 2, 8); // At least 8 segments
+    const maxSegments = allPrizes.length + 1; // All prizes + 1 X
     
     for (let i = 0; i < maxSegments; i++) {
-      if (i % 2 === 0 && allPrizes[Math.floor(i/2)]) {
+      if (i < allPrizes.length) {
         // Prize segment
-        const prize = allPrizes[Math.floor(i/2)];
-        const prizeText = typeof prize === 'string' ? prize : (prize.name || 'Prize');
+        const prize = allPrizes[i];
+        let prizeText = typeof prize === 'string' ? prize : (prize.name || 'Prize');
+        
+        // Extract only the monetary value (e.g., "Golden Palm - £1000" becomes "£1000")
+        if (prizeText.includes('£')) {
+          const match = prizeText.match(/£[\d,]+/);
+          if (match) {
+            prizeText = match[0];
+          }
+        }
         
         allSegments.push({
-          'fillStyle': '#0096ff',
+          'fillStyle': prize.wheel_color || '#0096ff',
           'text': prizeText,
           'textFillStyle': '#000',
-          'textFontSize': 14
+          'textFontSize': 18,
+          'strokeStyle': '#ffffff',
+          'lineWidth': 1
         });
       } else {
-        // Losing segment (X)
+        // Only one X segment
         allSegments.push({
           'fillStyle': '#ffcccc',
           'text': 'X',
           'textFillStyle': '#666',
-          'textFontSize': 16
+          'textFontSize': 20,
+          'strokeStyle': '#ffffff',
+          'lineWidth': 1
         });
       }
     }
