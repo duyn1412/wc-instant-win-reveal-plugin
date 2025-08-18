@@ -705,7 +705,7 @@ jQuery(document).ready(function($) {
     }
     
     // Debug: Check where prizes data comes from
-    console.log('[Game] All prizes data from PHP:', prizes);
+    console.log('[Game] All prizes data from PHP:', allPrizes);
     console.log('[Game] Current product ID:', currentProduct.product_id);
     
     // Build segments alternating between prizes and X (only one X)
