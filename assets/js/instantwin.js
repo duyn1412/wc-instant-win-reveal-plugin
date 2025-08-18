@@ -2323,6 +2323,7 @@ jQuery(document).ready(function($) {
       items: itemsToShow,
       loop: loopEnabled,
       margin: marginValue,
+      autoWidth:true,
       nav: totalCards > 1, // Only show nav if more than 1 card
       dots: false,
       center: totalCards > 1, // Center if more than 1 card

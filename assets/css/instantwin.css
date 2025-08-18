@@ -1823,6 +1823,7 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   -moz-backface-visibility: hidden;
 }
 
+
 /* Active/Center card */
 .owl-carousel .owl-item.active.center {
   z-index: 3;
@@ -1847,10 +1848,12 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
+
+
 /* Non-active cards */
 .owl-carousel .owl-item:not(.active) {
   z-index: 0;
-  opacity: 0;
+  opacity: 0.6;
   transform: scale(0.8) translateZ(-100px);
   transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
