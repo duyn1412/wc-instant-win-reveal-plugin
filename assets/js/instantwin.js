@@ -726,7 +726,7 @@ jQuery(document).ready(function($) {
           'textFillStyle': '#000',
           'textFontSize': 18,
           'strokeStyle': '#ffffff',
-          'lineWidth': 2
+          'lineWidth': 3
         });
       } else {
         // Only one X segment
@@ -736,7 +736,7 @@ jQuery(document).ready(function($) {
           'textFillStyle': '#666',
           'textFontSize': 20,
           'strokeStyle': '#ffffff',
-          'lineWidth': 2
+          'lineWidth': 3
         });
       }
     }
