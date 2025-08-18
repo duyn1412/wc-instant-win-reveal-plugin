@@ -988,6 +988,7 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         $prizes = [];
         foreach ( $order->get_items() as $item ) {
             $pid = $item->get_product_id();
+            error_log("[AJAX] Processing product ID: " . $pid);
             if ( function_exists( 'have_rows' ) && have_rows( 'instant_tickets_prizes', $pid ) ) {
                 foreach ( get_field( 'instant_tickets_prizes', $pid ) as $w ) {
                     $prize_name = $w['instant_prize'];
@@ -1047,6 +1048,9 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         }
         
         error_log("[PHP] Final prizes data: " . json_encode($prizes));
+        
+        // Debug: Add debug for AJAX response
+        error_log("[AJAX] Prizes data for order " . $order_id . ": " . json_encode($prizes));
         
         // Debug: Add var_dump for thank you page
         if (isset($_GET['debug']) && $_GET['debug'] === 'true') {
