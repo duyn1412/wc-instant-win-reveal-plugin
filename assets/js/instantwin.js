@@ -750,6 +750,7 @@ jQuery(document).ready(function($) {
     }
     
     console.log('[Game] Creating wheel with', allSegments.length, 'segments');
+    console.log('[Game] All segments data:', allSegments);
     
     wheelInstance = new Winwheel({
       'canvasId': canvasId,
@@ -775,6 +776,12 @@ jQuery(document).ready(function($) {
     
     window._pirateWheel = wheelInstance;
     console.log('[Game] Wheel created successfully with', wheelInstance.numSegments, 'segments');
+    
+    // Force wheel to redraw with new colors
+    if (wheelInstance.draw) {
+      wheelInstance.draw();
+      console.log('[Game] Wheel redrawn with new colors');
+    }
     
     // Spins remaining counter above spin button
     const spinsRemaining = $(`<div class="plays-left">spins remaining: ${currentProduct.tickets.length}</div>`);
