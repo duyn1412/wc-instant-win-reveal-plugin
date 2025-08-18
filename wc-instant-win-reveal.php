@@ -496,6 +496,19 @@ class WC_Instant_Win_Reveal {
         ] );
         wp_enqueue_script( 'wc-instantwin-js' );
         wp_enqueue_style(  'wc-instantwin-css' );
+        
+        // Debug: Add var_dump for thank you page
+        if (isset($_GET['debug']) && $_GET['debug'] === 'true') {
+            echo '<div style="background: #f0f0f0; padding: 20px; margin: 20px; border: 1px solid #ccc;">';
+            echo '<h3>PHP Debug Data (Enqueue):</h3>';
+            echo '<h4>Order ID:</h4>';
+            var_dump($order_id);
+            echo '<h4>Product Data:</h4>';
+            var_dump($tickets_per_product);
+            echo '<h4>Prizes Data:</h4>';
+            var_dump($prizes);
+            echo '</div>';
+        }
     }
 
     public function output_reveal_ui( $order_id ) {
@@ -969,6 +982,19 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         }
         
         error_log("[PHP] Final prizes data: " . json_encode($prizes));
+        
+        // Debug: Add var_dump for thank you page
+        if (isset($_GET['debug']) && $_GET['debug'] === 'true') {
+            echo '<div style="background: #f0f0f0; padding: 20px; margin: 20px; border: 1px solid #ccc;">';
+            echo '<h3>PHP Debug Data:</h3>';
+            echo '<h4>Product ID:</h4>';
+            var_dump($product_id);
+            echo '<h4>Prizes Data:</h4>';
+            var_dump($prizes);
+            echo '<h4>Tickets Data:</h4>';
+            var_dump($tickets_per_product);
+            echo '</div>';
+        }
         
         wp_die( json_encode( [
             'success' => true,
