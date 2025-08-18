@@ -967,6 +967,8 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
             $revealed_products = [];
         }
         
+        error_log("[PHP] Final prizes data: " . json_encode($prizes));
+        
         wp_die( json_encode( [
             'success' => true,
             'tickets' => $tickets_per_product,
