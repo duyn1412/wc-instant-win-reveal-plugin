@@ -704,6 +704,10 @@ jQuery(document).ready(function($) {
       return;
     }
     
+    // Debug: Check where prizes data comes from
+    console.log('[Game] All prizes data from PHP:', prizes);
+    console.log('[Game] Current product ID:', currentProduct.product_id);
+    
     // Build segments alternating between prizes and X (only one X)
     const allSegments = [];
     const maxSegments = allPrizes.length + 1; // All prizes + 1 X
