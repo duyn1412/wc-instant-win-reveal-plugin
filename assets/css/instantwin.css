@@ -1828,7 +1828,6 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   z-index: 3;
   opacity: 1;
   transform: scale(1) translateZ(0px);
-  margin-right: -250px;
   transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
