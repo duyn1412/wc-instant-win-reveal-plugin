@@ -823,7 +823,7 @@ jQuery(document).ready(function($) {
           // console.log('[Wheel] Sound callback');
         }
       },
-      'pointerAngle': 0
+      'pointerAngle': 90
     });
     
     window._pirateWheel = wheelInstance;
