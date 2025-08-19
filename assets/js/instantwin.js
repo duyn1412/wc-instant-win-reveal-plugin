@@ -76,14 +76,19 @@ jQuery(document).ready(function($) {
       if (this.spinning) {
         console.log('[Sounds] Spinning audio object found:', this.spinning);
         try {
-          this.spinning.currentTime = 0;
-          console.log('[Sounds] Set currentTime to 0, attempting to play spinning...');
-          this.spinning.play().then(() => {
-            console.log('[Sounds] Spinning sound started playing successfully');
-          }).catch(e => {
-            console.warn('[Sounds] Could not play spinning sound:', e);
-            console.warn('[Sounds] Error details:', e.message);
-          });
+          // Only reset and play if not already playing
+          if (this.spinning.paused || this.spinning.ended) {
+            this.spinning.currentTime = 0;
+            console.log('[Sounds] Set currentTime to 0, attempting to play spinning...');
+            this.spinning.play().then(() => {
+              console.log('[Sounds] Spinning sound started playing successfully');
+            }).catch(e => {
+              console.warn('[Sounds] Could not play spinning sound:', e);
+              console.warn('[Sounds] Error details:', e.message);
+            });
+          } else {
+            console.log('[Sounds] Spinning sound already playing, skipping...');
+          }
         } catch (error) {
           console.warn('[Sounds] Error playing spinning sound:', error);
         }
@@ -3711,17 +3716,9 @@ jQuery(document).ready(function($) {
     // Reset spinning flag at the start of each spin
     window.slotsSpinningStarted = false;
     
-    // Play spinning sound (only once per spin)
-    if (!window.slotsSpinningStarted) {
+    // Play spinning sound right before starting animation
     gameSounds.playSpinning();
-      window.slotsSpinningStarted = true;
-      
-      // Stop spinning sound after max duration (longest animation is 1800ms + buffer)
-      setTimeout(() => {
-        gameSounds.stopSpinning();
-        window.slotsSpinningStarted = false;
-      }, 3000); // Stop after 3 seconds to cover full animation
-    }
+    window.slotsSpinningStarted = true;
     
     // Determine target symbols for each reel
     let targetSymbols = [];
@@ -3958,6 +3955,10 @@ jQuery(document).ready(function($) {
             
             completedReels++;
             if (completedReels === 3) {
+              // Stop spinning sound exactly when all reels finish
+              gameSounds.stopSpinning();
+              window.slotsSpinningStarted = false;
+              
               // All reels stopped - add flashing effect to slots-reels container for wins
               if (isWin) {
                 $('.slots-reels').addClass('winning-symbol-flash');
@@ -3984,9 +3985,6 @@ jQuery(document).ready(function($) {
   
   function showSlotsResult(isWin, prize) {
     console.log('[Slots] Showing result - Win:', isWin, 'Prize:', prize);
-    
-    // Stop spinning sound
-    gameSounds.stopSpinning();
     
     // Re-enable spin button
     $('#instantwin-play-btn').prop('disabled', false).text('Spin');
@@ -4094,9 +4092,6 @@ jQuery(document).ready(function($) {
   function startWheelSpin(targetPrize, ticketUsed, serverResponse) {
     console.log('[Game] Starting wheel spin with target:', targetPrize);
     
-    // Play spinning sound
-    gameSounds.playSpinning();
-    
     if (!wheelInstance) {
       console.error('[Game] No wheel instance found');
       $('#instantwin-play-btn').prop('disabled', false).text('Spin the Wheel!');
@@ -4138,7 +4133,7 @@ jQuery(document).ready(function($) {
     wheelInstance.animation.callbackFinished = function(indicatedSegment) {
       console.log('[Game] Animation finished - landed on:', indicatedSegment.text);
       
-      // Stop spinning sound
+      // Stop spinning sound exactly when animation finishes
       gameSounds.stopSpinning();
       
       // Update play history
@@ -4156,6 +4151,9 @@ jQuery(document).ready(function($) {
       saveGameState();
       showResultModal(indicatedSegment.text !== 'X', indicatedSegment.text);
     };
+    
+    // Play spinning sound right before starting animation
+    gameSounds.playSpinning();
     
     // Start animation
     wheelInstance.startAnimation();
