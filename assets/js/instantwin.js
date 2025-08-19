@@ -76,19 +76,16 @@ jQuery(document).ready(function($) {
       if (this.spinning) {
         console.log('[Sounds] Spinning audio object found:', this.spinning);
         try {
-          // Only reset and play if not already playing
-          if (this.spinning.paused || this.spinning.ended) {
-            this.spinning.currentTime = 0;
-            console.log('[Sounds] Set currentTime to 0, attempting to play spinning...');
-            this.spinning.play().then(() => {
-              console.log('[Sounds] Spinning sound started playing successfully');
-            }).catch(e => {
-              console.warn('[Sounds] Could not play spinning sound:', e);
-              console.warn('[Sounds] Error details:', e.message);
-            });
-          } else {
-            console.log('[Sounds] Spinning sound already playing, skipping...');
-          }
+          // Set loop to true for continuous spinning sound
+          this.spinning.loop = true;
+          this.spinning.currentTime = 0;
+          console.log('[Sounds] Set currentTime to 0 and loop=true, attempting to play spinning...');
+          this.spinning.play().then(() => {
+            console.log('[Sounds] Spinning sound started playing successfully with loop');
+          }).catch(e => {
+            console.warn('[Sounds] Could not play spinning sound:', e);
+            console.warn('[Sounds] Error details:', e.message);
+          });
         } catch (error) {
           console.warn('[Sounds] Error playing spinning sound:', error);
         }
@@ -100,8 +97,10 @@ jQuery(document).ready(function($) {
     stopSpinning: function() {
       if (this.spinning) {
         try {
+          this.spinning.loop = false; // Stop looping
           this.spinning.pause();
           this.spinning.currentTime = 0;
+          console.log('[Sounds] Spinning sound stopped and loop disabled');
         } catch (error) {
           console.warn('[Sounds] Error stopping spinning sound:', error);
         }
