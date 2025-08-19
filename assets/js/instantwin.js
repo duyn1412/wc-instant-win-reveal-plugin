@@ -4172,8 +4172,8 @@ jQuery(document).ready(function($) {
       showResultModal(indicatedSegment.text !== 'X', indicatedSegment.text);
     };
     
-    // Play spinning sound right before starting animation (with loop for wheel)
-    gameSounds.playSpinning(true);
+    // Play spinning sound right before starting animation (no loop for wheel - single play)
+    gameSounds.playSpinning(false);
     
     // Start animation
     wheelInstance.startAnimation();
