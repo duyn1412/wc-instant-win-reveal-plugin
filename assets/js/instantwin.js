@@ -3719,13 +3719,15 @@ jQuery(document).ready(function($) {
     gameSounds.playSpinning();
     window.slotsSpinningStarted = true;
     
+    // Get product prizes data
+    const productPrizes = currentProduct.prizes || [];
+    
     // Determine target symbols for each reel
     let targetSymbols = [];
     
     if (isWin && prize && prize.trim() !== '') {
       // Find the prize symbol
       let prizeSymbol = null;
-      const productPrizes = currentProduct.prizes || [];
       if (productPrizes && productPrizes.length > 0) {
         console.log('[Slots] Looking for prize:', prize);
         console.log('[Slots] Current product prizes:', productPrizes);
