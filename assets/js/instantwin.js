@@ -46,12 +46,21 @@ jQuery(document).ready(function($) {
         console.log('[Sounds] Spinning audio object:', this.spinning);
         console.log('[Sounds] Winning audio object:', this.winning);
         
-        // Test sound loading
+        // Test sound loading (only log once)
+        let spinningLoaded = false;
+        let winningLoaded = false;
+        
         this.spinning.addEventListener('canplaythrough', () => {
-          console.log('[Sounds] Spinning sound loaded successfully');
+          if (!spinningLoaded) {
+            console.log('[Sounds] Spinning sound loaded successfully');
+            spinningLoaded = true;
+          }
         });
         this.winning.addEventListener('canplaythrough', () => {
-          console.log('[Sounds] Winning sound loaded successfully');
+          if (!winningLoaded) {
+            console.log('[Sounds] Winning sound loaded successfully');
+            winningLoaded = true;
+          }
         });
         
         this.spinning.addEventListener('error', (e) => {
