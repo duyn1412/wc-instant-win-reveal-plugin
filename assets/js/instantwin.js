@@ -718,8 +718,8 @@ jQuery(document).ready(function($) {
     $('#instantwin-game-canvas').append(`
       <div class="wheel-container" style="position:relative;max-width:400px;margin:0 auto;">
         <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel" style="display:block;"></canvas>
-        <div id="${pointerId}" style="position:absolute;top:50%;left:-20px;transform:translateY(-50%);width:auto;height:auto;z-index:2;">
-          <img src="${instantWin.plugin_url}/assets/images/instantwin-wheel-pointer.svg" alt="Wheel Pointer" style="width:auto;height:auto;" />
+        <div id="${pointerId}" style="position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:auto;height:auto;z-index:2;">
+          <img src="${instantWin.plugin_url}/assets/images/instantwin-wheel-pointer.svg" alt="Wheel Pointer" style="width:auto;height:auto;transform:rotate(90deg);" />
         </div>
         <div class="wheel-center-knob" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:25px;height:25px;background:white;border-radius:50%;z-index:3;"></div>
       </div>
@@ -823,7 +823,7 @@ jQuery(document).ready(function($) {
           // console.log('[Wheel] Sound callback');
         }
       },
-      'pointerAngle': 90
+      'pointerAngle': 270
     });
     
     window._pirateWheel = wheelInstance;
