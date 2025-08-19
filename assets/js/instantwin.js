@@ -718,7 +718,9 @@ jQuery(document).ready(function($) {
     $('#instantwin-game-canvas').append(`
       <div class="wheel-container" style="position:relative;max-width:400px;margin:0 auto;">
         <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel" style="display:block;"></canvas>
-        <div id="${pointerId}" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #e74c3c;z-index:2;"></div>
+        <div id="${pointerId}" style="position:absolute;top:50%;left:-20px;transform:translateY(-50%);width:20px;height:20px;z-index:2;">
+          <img src="${instantWin.plugin_url}/assets/images/instantwin-wheel-pointer.svg" alt="Wheel Pointer" style="width:100%;height:100%;" />
+        </div>
         <div class="wheel-center-knob" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:25px;height:25px;background:white;border-radius:50%;z-index:3;"></div>
       </div>
     `);
