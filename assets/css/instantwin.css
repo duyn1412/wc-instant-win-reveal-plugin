@@ -602,7 +602,7 @@ button.w-btn.us-btn-style_1.instant-reveal-trigger:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-bottom: 50px;
+  margin-bottom: 50px !important;
 }
 
 /* Game Specific Styles */
