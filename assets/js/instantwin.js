@@ -76,16 +76,21 @@ jQuery(document).ready(function($) {
       if (this.spinning) {
         console.log('[Sounds] Spinning audio object found:', this.spinning);
         try {
-          // Set loop based on parameter (true for wheel, false for slots)
-          this.spinning.loop = enableLoop;
-          this.spinning.currentTime = 0;
-          console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play spinning...');
-          this.spinning.play().then(() => {
-            console.log('[Sounds] Spinning sound started playing successfully with loop=' + enableLoop);
-          }).catch(e => {
-            console.warn('[Sounds] Could not play spinning sound:', e);
-            console.warn('[Sounds] Error details:', e.message);
-          });
+          // Only play if not already playing
+          if (this.spinning.paused || this.spinning.ended) {
+            // Set loop based on parameter (true for wheel, false for slots)
+            this.spinning.loop = enableLoop;
+            this.spinning.currentTime = 0;
+            console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play spinning...');
+            this.spinning.play().then(() => {
+              console.log('[Sounds] Spinning sound started playing successfully with loop=' + enableLoop);
+            }).catch(e => {
+              console.warn('[Sounds] Could not play spinning sound:', e);
+              console.warn('[Sounds] Error details:', e.message);
+            });
+          } else {
+            console.log('[Sounds] Spinning sound already playing, skipping...');
+          }
         } catch (error) {
           console.warn('[Sounds] Error playing spinning sound:', error);
         }
