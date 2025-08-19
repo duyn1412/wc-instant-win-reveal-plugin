@@ -66,7 +66,7 @@ jQuery(document).ready(function($) {
       }
     },
     
-    playSpinning: function() {
+    playSpinning: function(enableLoop = false) {
       console.log('[Sounds] Attempting to play spinning sound...');
       // Enable sounds if not already enabled (user interaction from clicking play button)
       if (!soundsEnabled) {
@@ -76,12 +76,12 @@ jQuery(document).ready(function($) {
       if (this.spinning) {
         console.log('[Sounds] Spinning audio object found:', this.spinning);
         try {
-          // Set loop to true for continuous spinning sound
-          this.spinning.loop = true;
+          // Set loop based on parameter (true for wheel, false for slots)
+          this.spinning.loop = enableLoop;
           this.spinning.currentTime = 0;
-          console.log('[Sounds] Set currentTime to 0 and loop=true, attempting to play spinning...');
+          console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play spinning...');
           this.spinning.play().then(() => {
-            console.log('[Sounds] Spinning sound started playing successfully with loop');
+            console.log('[Sounds] Spinning sound started playing successfully with loop=' + enableLoop);
           }).catch(e => {
             console.warn('[Sounds] Could not play spinning sound:', e);
             console.warn('[Sounds] Error details:', e.message);
@@ -4153,8 +4153,8 @@ jQuery(document).ready(function($) {
       showResultModal(indicatedSegment.text !== 'X', indicatedSegment.text);
     };
     
-    // Play spinning sound right before starting animation
-    gameSounds.playSpinning();
+    // Play spinning sound right before starting animation (with loop for wheel)
+    gameSounds.playSpinning(true);
     
     // Start animation
     wheelInstance.startAnimation();
