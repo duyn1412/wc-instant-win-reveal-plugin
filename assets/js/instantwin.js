@@ -85,8 +85,9 @@ jQuery(document).ready(function($) {
       if (this.spinning) {
         console.log('[Sounds] Spinning audio object found:', this.spinning);
         try {
-          // Only play if not already playing
-          if (this.spinning.paused || this.spinning.ended) {
+          // Only play if not already playing and no other game is active
+          if ((this.spinning.paused || this.spinning.ended) && !window.gameActive) {
+            window.gameActive = true; // Set global flag
             // Set loop based on parameter (true for wheel, false for slots)
             this.spinning.loop = enableLoop;
             this.spinning.currentTime = 0;
@@ -96,12 +97,14 @@ jQuery(document).ready(function($) {
             }).catch(e => {
               console.warn('[Sounds] Could not play spinning sound:', e);
               console.warn('[Sounds] Error details:', e.message);
+              window.gameActive = false; // Reset flag on error
             });
           } else {
-            console.log('[Sounds] Spinning sound already playing, skipping...');
+            console.log('[Sounds] Spinning sound already playing or game active, skipping...');
           }
         } catch (error) {
           console.warn('[Sounds] Error playing spinning sound:', error);
+          window.gameActive = false; // Reset flag on error
         }
       } else {
         console.warn('[Sounds] Spinning audio object is null/undefined');
@@ -114,9 +117,11 @@ jQuery(document).ready(function($) {
           this.spinning.loop = false; // Stop looping
           this.spinning.pause();
           this.spinning.currentTime = 0;
+          window.gameActive = false; // Reset global flag
           console.log('[Sounds] Spinning sound stopped and loop disabled');
         } catch (error) {
           console.warn('[Sounds] Error stopping spinning sound:', error);
+          window.gameActive = false; // Reset flag on error
         }
       }
     },
