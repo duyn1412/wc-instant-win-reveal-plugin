@@ -4130,11 +4130,44 @@ jQuery(document).ready(function($) {
     // Find target segment (1-based indexing)
     let targetSegmentNumber = -1;
     if (wheelInstance.segments && wheelInstance.numSegments > 0) {
+      // Decode Unicode escape sequences in targetPrize
+      let decodedTargetPrize = targetPrize;
+      if (targetPrize && (targetPrize.includes('ud83c') || targetPrize.includes('u00a3') || targetPrize.includes('ud83e'))) {
+        try {
+          decodedTargetPrize = targetPrize.replace(/ud83cudf1f/gi, '⭐')  // Star emoji
+                                         .replace(/ud83eudea8/gi, '🪨')  // Rock emoji
+                                         .replace(/ud83cudf4d/gi, '🍍')  // Pineapple emoji
+                                         .replace(/ud83eudd65/gi, '🥥')  // Coconut emoji
+                                         .replace(/ud83cudf05/gi, '🌅')  // Sunset emoji
+                                         .replace(/ud83fudfbf/gi, '🗿')  // Tiki emoji
+                                         .replace(/ud83cudf1a/gi, '🐚')  // Shell emoji
+                                         .replace(/u2753/gi, '❓')      // Question mark emoji
+                                         .replace(/u00a3/gi, '£');      // Pound symbol
+          console.log('[Game] Decoded target prize from:', targetPrize, 'to:', decodedTargetPrize);
+        } catch (e) {
+          console.log('[Game] Could not decode target prize, using original:', targetPrize);
+        }
+      }
+      
       for (let segmentNum = 1; segmentNum <= wheelInstance.numSegments; segmentNum++) {
-        if (wheelInstance.segments[segmentNum] && wheelInstance.segments[segmentNum].text === targetPrize) {
-          targetSegmentNumber = segmentNum;
-          console.log('[Game] Found target segment:', segmentNum, 'for prize:', targetPrize);
-          break;
+        if (wheelInstance.segments[segmentNum]) {
+          const segmentText = wheelInstance.segments[segmentNum].text;
+          // Try exact match first
+          if (segmentText === targetPrize || segmentText === decodedTargetPrize) {
+            targetSegmentNumber = segmentNum;
+            console.log('[Game] Found target segment:', segmentNum, 'for prize:', targetPrize);
+            break;
+          }
+          // Try partial match for monetary values
+          if (decodedTargetPrize.includes('£') && segmentText.includes('£')) {
+            const targetMatch = decodedTargetPrize.match(/£[\d,]+/);
+            const segmentMatch = segmentText.match(/£[\d,]+/);
+            if (targetMatch && segmentMatch && targetMatch[0] === segmentMatch[0]) {
+              targetSegmentNumber = segmentNum;
+              console.log('[Game] Found target segment by monetary value:', segmentNum, 'for prize:', targetPrize);
+              break;
+            }
+          }
         }
       }
     }
