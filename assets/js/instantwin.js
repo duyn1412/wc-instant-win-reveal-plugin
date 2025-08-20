@@ -794,20 +794,27 @@ jQuery(document).ready(function($) {
           return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
         };
         
+        const darkerColor = createDarkerColor(fillColor);
+        const gradientStyle = `linear-gradient(to right, ${fillColor}, ${darkerColor})`;
+        
+        console.log('[Wheel] Original color:', fillColor);
+        console.log('[Wheel] Darker color:', darkerColor);
+        console.log('[Wheel] Gradient style:', gradientStyle);
+        
         const segment = {
-          'fillStyle': `linear-gradient(to right, ${fillColor}, ${createDarkerColor(fillColor)})`,
+          'fillStyle': fillColor, // Use solid color first for testing
           'text': prizeText,
           'textFillStyle': textColor,
           'textFontSize': 18,
           'strokeStyle': '#ffffff',
           'lineWidth': 3
         };
-        console.log('[Wheel] Creating segment for', prizeText, 'with textFillStyle:', textColor);
+        console.log('[Wheel] Creating segment for', prizeText, 'with fillStyle:', fillColor, 'and textFillStyle:', textColor);
         allSegments.push(segment);
       } else {
         // Only one X segment
         allSegments.push({
-          'fillStyle': 'linear-gradient(to right, #ffdddd, #ffaaaa)',
+          'fillStyle': '#ffdddd', // Use solid color first for testing
           'text': 'X',
           'textFillStyle': '#666',
           'textFontSize': 20,
