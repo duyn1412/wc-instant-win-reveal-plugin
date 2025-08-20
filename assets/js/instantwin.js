@@ -778,8 +778,31 @@ jQuery(document).ready(function($) {
         console.log('[Wheel] Using fill color:', fillColor);
         console.log('[Wheel] Using text color:', textColor);
         
+        // Create gradient from fillColor
+        const createGradient = (color) => {
+          // Convert hex to RGB for manipulation
+          const hex = color.replace('#', '');
+          const r = parseInt(hex.substr(0, 2), 16);
+          const g = parseInt(hex.substr(2, 2), 16);
+          const b = parseInt(hex.substr(4, 2), 16);
+          
+          // Create lighter and darker versions
+          const lighterR = Math.min(255, r + 40);
+          const lighterG = Math.min(255, g + 40);
+          const lighterB = Math.min(255, b + 40);
+          
+          const darkerR = Math.max(0, r - 40);
+          const darkerG = Math.max(0, g - 40);
+          const darkerB = Math.max(0, b - 40);
+          
+          const lighterColor = `#${lighterR.toString(16).padStart(2, '0')}${lighterG.toString(16).padStart(2, '0')}${lighterB.toString(16).padStart(2, '0')}`;
+          const darkerColor = `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+          
+          return `radial-gradient(circle, ${lighterColor}, ${color}, ${darkerColor})`;
+        };
+        
         const segment = {
-          'fillStyle': fillColor,
+          'fillStyle': createGradient(fillColor),
           'text': prizeText,
           'textFillStyle': textColor,
           'textFontSize': 18,
@@ -791,7 +814,7 @@ jQuery(document).ready(function($) {
       } else {
         // Only one X segment
         allSegments.push({
-          'fillStyle': '#ffcccc',
+          'fillStyle': 'radial-gradient(circle, #ffdddd, #ffcccc, #ffaaaa)',
           'text': 'X',
           'textFillStyle': '#666',
           'textFontSize': 20,
