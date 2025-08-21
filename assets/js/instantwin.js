@@ -802,7 +802,7 @@ jQuery(document).ready(function($) {
         console.log('[Wheel] Gradient style:', gradientStyle);
         
         const segment = {
-          'fillStyle': fillColor, // Use solid color first for testing
+          'fillStyle': darkerColor, // Use darker color for gradient effect
           'text': prizeText,
           'textFillStyle': textColor,
           'textFontSize': 18,
@@ -814,7 +814,7 @@ jQuery(document).ready(function($) {
       } else {
         // Only one X segment
         allSegments.push({
-          'fillStyle': '#ffdddd', // Use solid color first for testing
+          'fillStyle': '#dddddd', // Light gray for X segment
           'text': 'X',
           'textFillStyle': '#666',
           'textFontSize': 20,
@@ -966,6 +966,7 @@ jQuery(document).ready(function($) {
         });
     });
     
+
     // Add spin button below the wheel
     $('#instantwin-game-canvas').append(spinBtn);
     
@@ -974,6 +975,11 @@ jQuery(document).ready(function($) {
     
     // Add test buttons for each segment
     addWheelTestButtons();
+    console.log('ddallPrizes', allPrizes);
+
+
+ 
+
   }
   
   function addWheelTestButtons() {
