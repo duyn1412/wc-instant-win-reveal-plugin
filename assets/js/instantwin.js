@@ -831,7 +831,7 @@ jQuery(document).ready(function($) {
         console.log('[Wheel] Creating segment with gradient colors for segment:', i);
         
         const segment = {
-          'fillStyle': colors.darkerColor, // Use darker color for now (will implement proper gradient later)
+          'fillStyle': `radial-gradient(circle, ${colors.lighterColor} 0%, ${colors.baseColor} 50%, ${colors.darkerColor} 100%)`, // Use CSS radial gradient
           'text': prizeText,
           'textFillStyle': textColor,
           'textFontSize': 18,
@@ -845,7 +845,7 @@ jQuery(document).ready(function($) {
         console.log('[Wheel] Creating X segment with solid color');
         
         allSegments.push({
-          'fillStyle': '#dddddd', // Use solid gray color for X segment
+          'fillStyle': 'radial-gradient(circle, #ffffff 0%, #eeeeee 50%, #dddddd 100%)', // Use CSS radial gradient for X segment
           'text': 'X',
           'textFillStyle': '#666',
           'textFontSize': 20,
