@@ -758,6 +758,35 @@ jQuery(document).ready(function($) {
     const ctx = canvas.getContext('2d');
     const canvasCenter = canvas.height / 2;
     
+    // Create gradient objects for each prize color
+    const createRadialGradient = (baseColor, ctx, canvasCenter) => {
+      const radGradient = ctx.createRadialGradient(canvasCenter, canvasCenter, 0, canvasCenter, canvasCenter, canvasCenter);
+      
+      // Convert hex to RGB for manipulation
+      const hex = baseColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      // Create lighter version (center)
+      const lighterR = Math.min(255, r + 30);
+      const lighterG = Math.min(255, g + 30);
+      const lighterB = Math.min(255, b + 30);
+      const lighterColor = `#${lighterR.toString(16).padStart(2, '0')}${lighterG.toString(16).padStart(2, '0')}${lighterB.toString(16).padStart(2, '0')}`;
+      
+      // Create darker version (edge)
+      const darkerR = Math.max(0, r - 50);
+      const darkerG = Math.max(0, g - 50);
+      const darkerB = Math.max(0, b - 50);
+      const darkerColor = `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+      
+      radGradient.addColorStop(0, lighterColor);    // Center: lighter color
+      radGradient.addColorStop(0.5, baseColor);     // Middle: original color
+      radGradient.addColorStop(1, darkerColor);     // Edge: darker color
+      
+      return radGradient;
+    };
+    
     for (let i = 0; i < maxSegments; i++) {
       if (i < productPrizes.length) {
         // Prize segment
@@ -801,37 +830,14 @@ jQuery(document).ready(function($) {
         
         const darkerColor = createDarkerColor(fillColor);
         
-        // Create multiple color stops for gradient effect
-        const createGradientColors = (baseColor) => {
-          const hex = baseColor.replace('#', '');
-          const r = parseInt(hex.substr(0, 2), 16);
-          const g = parseInt(hex.substr(2, 2), 16);
-          const b = parseInt(hex.substr(4, 2), 16);
-          
-          // Create lighter version (center)
-          const lighterR = Math.min(255, r + 30);
-          const lighterG = Math.min(255, g + 30);
-          const lighterB = Math.min(255, b + 30);
-          const lighterColor = `#${lighterR.toString(16).padStart(2, '0')}${lighterG.toString(16).padStart(2, '0')}${lighterB.toString(16).padStart(2, '0')}`;
-          
-          // Create darker version (edge)
-          const darkerR = Math.max(0, r - 50);
-          const darkerG = Math.max(0, g - 50);
-          const darkerB = Math.max(0, b - 50);
-          const darkerColor = `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
-          
-          return { lighterColor, baseColor, darkerColor };
-        };
-        
-        const colors = createGradientColors(fillColor);
+        // Create radial gradient for this segment
+        const radGradient = createRadialGradient(fillColor, ctx, canvasCenter);
         
         console.log('[Wheel] Original color:', fillColor);
-        console.log('[Wheel] Lighter color:', colors.lighterColor);
-        console.log('[Wheel] Darker color:', colors.darkerColor);
-        console.log('[Wheel] Creating segment with gradient colors for segment:', i);
+        console.log('[Wheel] Created radial gradient for segment:', i);
         
         const segment = {
-          'fillStyle': `radial-gradient(circle, ${colors.lighterColor} 0%, ${colors.baseColor} 50%, ${colors.darkerColor} 100%)`, // Use CSS radial gradient
+          'fillStyle': radGradient, // Use Canvas radial gradient object
           'text': prizeText,
           'textFillStyle': textColor,
           'textFontSize': 18,
@@ -841,11 +847,16 @@ jQuery(document).ready(function($) {
         console.log('[Wheel] Creating segment for', prizeText, 'with radial gradient and textFillStyle:', textColor);
         allSegments.push(segment);
       } else {
-        // Only one X segment - use solid color for now
-        console.log('[Wheel] Creating X segment with solid color');
+        // Only one X segment - also with gradient
+        const xGradient = ctx.createRadialGradient(canvasCenter, canvasCenter, 0, canvasCenter, canvasCenter, canvasCenter);
+        xGradient.addColorStop(0, '#ffffff');    // Center: white
+        xGradient.addColorStop(0.5, '#eeeeee');  // Middle: light gray
+        xGradient.addColorStop(1, '#dddddd');    // Edge: darker gray
+        
+        console.log('[Wheel] Creating X segment with radial gradient');
         
         allSegments.push({
-          'fillStyle': 'radial-gradient(circle, #ffffff 0%, #eeeeee 50%, #dddddd 100%)', // Use CSS radial gradient for X segment
+          'fillStyle': xGradient, // Use Canvas radial gradient object
           'text': 'X',
           'textFillStyle': '#666',
           'textFontSize': 20,
@@ -854,6 +865,7 @@ jQuery(document).ready(function($) {
         });
       }
     }
+    
     
     console.log('[Game] Creating wheel with', allSegments.length, 'segments');
     console.log('[Game] All segments data:', allSegments);
