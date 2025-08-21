@@ -835,6 +835,8 @@ jQuery(document).ready(function($) {
         
         console.log('[Wheel] Original color:', fillColor);
         console.log('[Wheel] Created radial gradient for segment:', i);
+        console.log('[Wheel] Gradient object type:', typeof radGradient);
+        console.log('[Wheel] Gradient object:', radGradient);
         
         const segment = {
           'fillStyle': radGradient, // Use Canvas radial gradient object
