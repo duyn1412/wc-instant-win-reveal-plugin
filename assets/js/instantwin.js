@@ -4560,6 +4560,9 @@ jQuery(document).ready(function($) {
       console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', totalProducts);
       console.log('[InstantWin] Server response is_reveal_all:', response.data ? response.data.is_reveal_all : 'undefined');
       console.log('[InstantWin] All products revealed?', allProductsRevealed);
+      console.log('[InstantWin] Products array:', products ? products.map(p => p.product_id) : 'undefined');
+      console.log('[InstantWin] Revealed products:', window.lastRevealedProducts);
+      console.log('[InstantWin] Comparison: revealed.length === totalProducts:', window.lastRevealedProducts.length, '===', totalProducts, '=', window.lastRevealedProducts.length === totalProducts);
       
       if (isRevealAll) {
         // Update lobby to show all games as completed
