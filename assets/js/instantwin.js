@@ -4553,15 +4553,24 @@ jQuery(document).ready(function($) {
       const totalProducts = products ? products.length : 0;
       const allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
       
-      // This is only "reveal all" if we started from lobby and revealed everything at once
-      // Individual reveals should NOT trigger "View Results" button
-      isRevealAll = false; // Individual reveals are never "reveal all"
+      // Check if this was a "reveal all" from lobby (ALL products revealed in one action)
+      // OR if all products are now revealed after individual reveals
+      isRevealAll = response.data && response.data.is_reveal_all === true;
       
       console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', totalProducts);
+      console.log('[InstantWin] Server response is_reveal_all:', response.data ? response.data.is_reveal_all : 'undefined');
       console.log('[InstantWin] All products revealed?', allProductsRevealed);
       
-      // Only change button to "View Results" if ALL products are revealed AND this was the last one
-      if (allProductsRevealed) {
+      if (isRevealAll) {
+        // Update lobby to show all games as completed
+        console.log('[InstantWin] Reveal all detected - updating lobby and changing button to View Results');
+        showGameLobby(); // Refresh lobby with updated revealed status
+        
+        // Change button to "View Results" so users can reopen popup
+        $('.instant-reveal-trigger').prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
+        console.log('[InstantWin] Button changed to "View Results" for reveal all');
+      } else if (allProductsRevealed) {
+        // Individual reveals: only change button to "View Results" if ALL products are revealed
         console.log('[InstantWin] All products now revealed - changing button to "View Results"');
         $('.instant-reveal-trigger').prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
       }
@@ -5076,6 +5085,9 @@ jQuery(document).ready(function($) {
       console.log('[InstantWin] reveal all response:', res);
       if (res && res.success) {
         // Process the reveal results and show appropriate messages
+        // Mark this as a "reveal all" operation
+        res.data = res.data || {};
+        res.data.is_reveal_all = true;
         processInstantRevealResults(res);
       } else {
         const msg = res && res.data && res.data.msg
