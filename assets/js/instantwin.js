@@ -4620,12 +4620,14 @@ jQuery(document).ready(function($) {
       $('#instantwin-game-canvas').removeClass('processing-loading');
     }, 500);
     
-    // Only re-enable button if it wasn't a reveal all (to preserve disabled state)
-    if (!isRevealAll) {
+    // Only re-enable button if it wasn't a reveal all AND not all products revealed
+    if (!isRevealAll && !allProductsRevealed) {
       $('.instant-reveal-trigger').prop('disabled', false).text('Instant Reveal');
-      console.log('[InstantWin] Button re-enabled for individual reveal');
-    } else {
+      console.log('[InstantWin] Button re-enabled for individual reveal (not all products revealed yet)');
+    } else if (isRevealAll) {
       console.log('[InstantWin] Button remains disabled for reveal all');
+    } else if (allProductsRevealed) {
+      console.log('[InstantWin] Button remains as View Results (all products revealed)');
     }
   }
   
