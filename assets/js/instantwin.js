@@ -61,7 +61,7 @@ jQuery(document).ready(function($) {
         
         this.spinning.addEventListener('canplaythrough', () => {
           if (!spinningLoaded) {
-            console.log('[Sounds] Spinning sound loaded successfully');
+          console.log('[Sounds] Spinning sound loaded successfully');
             spinningLoaded = true;
           }
         });
@@ -73,7 +73,7 @@ jQuery(document).ready(function($) {
         });
         this.winning.addEventListener('canplaythrough', () => {
           if (!winningLoaded) {
-            console.log('[Sounds] Winning sound loaded successfully');
+          console.log('[Sounds] Winning sound loaded successfully');
             winningLoaded = true;
           }
         });
@@ -108,15 +108,15 @@ jQuery(document).ready(function($) {
             window.gameActive = true; // Set global flag
             // Set loop based on parameter (true for wheel, false for slots)
             this.spinning.loop = enableLoop;
-            this.spinning.currentTime = 0;
+          this.spinning.currentTime = 0;
             console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play spinning...');
-            this.spinning.play().then(() => {
+          this.spinning.play().then(() => {
               console.log('[Sounds] Spinning sound started playing successfully with loop=' + enableLoop);
-            }).catch(e => {
-              console.warn('[Sounds] Could not play spinning sound:', e);
-              console.warn('[Sounds] Error details:', e.message);
+          }).catch(e => {
+            console.warn('[Sounds] Could not play spinning sound:', e);
+            console.warn('[Sounds] Error details:', e.message);
               window.gameActive = false; // Reset flag on error
-            });
+          });
           } else {
             console.log('[Sounds] Spinning sound already playing or game active, skipping...');
           }
@@ -346,16 +346,17 @@ jQuery(document).ready(function($) {
       $btn.prop('disabled', true).text('Processing...');
       
       // Check if we're in the lobby (reveal all) or in a game (reveal individual)
-      // We're in a game if the specific game container is visible, otherwise we're in lobby
+      // We're in a game if we have a currentProduct and we're not in the lobby view
       const $gameLobby = $('.game-lobby-page');
       const $gameContainer = $gameLobby.parent().find('#instantwin-game-area');
-      const isInGame = $gameContainer.is(':visible');
+      const isInGame = currentProductIdx !== undefined && currentProductIdx >= 0 && $gameContainer.is(':visible');
       const isInLobby = !isInGame;
       
-      console.log('[Debug] Game container (#instantwin-game-area) visible:', isInGame);
+      console.log('[Debug] Game container (#instantwin-game-area) visible:', $gameContainer.is(':visible'));
       console.log('[Debug] Game lobby (.game-lobby-page) visible:', $gameLobby.is(':visible'));
-      console.log('[Debug] isInLobby:', isInLobby);
       console.log('[Debug] currentProductIdx:', currentProductIdx);
+      console.log('[Debug] isInGame:', isInGame);
+      console.log('[Debug] isInLobby:', isInLobby);
       
       if (isInLobby) {
         // In lobby: reveal all games
@@ -1085,7 +1086,7 @@ jQuery(document).ready(function($) {
         });
     });
     
-
+    
     // Add spin button below the wheel
     $('#instantwin-game-canvas').append(spinBtn);
     
@@ -1629,14 +1630,14 @@ jQuery(document).ready(function($) {
     // Update card counter and auto-reveal button state when slider changes
     $('#scratch-cards-slider').on('translated.owl.carousel', function() {
       if (currentProduct && currentProduct.tickets) {
-        updateCardCounter();
-        updateAutoRevealButtonState();
+      updateCardCounter();
+      updateAutoRevealButtonState();
       }
     });
     
     // Initial card counter update
     if (currentProduct && currentProduct.tickets) {
-      updateCardCounter();
+    updateCardCounter();
     }
   }
   
@@ -2718,19 +2719,19 @@ jQuery(document).ready(function($) {
     console.log('[Scratch] Checking circle completion:', circleIndex, 'for ticket:', ticketNumber);
     
     // Get image data to check scratch percentage
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
     
-    let transparentPixels = 0;
+      let transparentPixels = 0;
     const totalPixels = data.length / 4;
-    
-    for (let i = 3; i < data.length; i += 4) {
+      
+      for (let i = 3; i < data.length; i += 4) {
       if (data[i] === 0) { // Alpha channel is 0 (transparent)
-        transparentPixels++;
+          transparentPixels++;
+        }
       }
-    }
-    
-    const scratchPercentage = (transparentPixels / totalPixels) * 100;
+      
+      const scratchPercentage = (transparentPixels / totalPixels) * 100;
     console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%');
     
     // If more than 30% is scratched, consider it complete (lowered from 50%)
@@ -3206,10 +3207,10 @@ jQuery(document).ready(function($) {
     try {
       localStorage.setItem('scratch_slider_progress', JSON.stringify(progressData));
       console.log('[Scratch] Slider progress saved to localStorage successfully');
-      showProgressSavedNotification();
+          showProgressSavedNotification();
     } catch (error) {
       console.error('[Scratch] Error saving progress to localStorage:', error);
-    }
+        }
   }
   
   function loadScratchSliderProgress() {
@@ -3220,45 +3221,45 @@ jQuery(document).ready(function($) {
       
       if (savedProgress) {
         const progressData = JSON.parse(savedProgress);
-        
-        if (progressData.cardsData) {
-          console.log('[Scratch] Restoring scratch progress for', Object.keys(progressData.cardsData).length, 'cards');
-          
-          // Restore scratch progress for each card (circles)
-          Object.keys(progressData.cardsData).forEach(ticketNumber => {
-            const cardData = progressData.cardsData[ticketNumber];
-            if (window.scratchCardsData && window.scratchCardsData[ticketNumber]) {
-              const scratchData = window.scratchCardsData[ticketNumber];
+            
+            if (progressData.cardsData) {
+              console.log('[Scratch] Restoring scratch progress for', Object.keys(progressData.cardsData).length, 'cards');
               
-              // Restore each circle's scratch areas
-              Object.keys(cardData.scratchedAreas).forEach(circleId => {
-                const circleAreas = cardData.scratchedAreas[circleId];
-                if (scratchData.circles[circleId]) {
-                  const ctx = scratchData.circles[circleId].ctx;
+              // Restore scratch progress for each card (circles)
+              Object.keys(progressData.cardsData).forEach(ticketNumber => {
+                const cardData = progressData.cardsData[ticketNumber];
+                if (window.scratchCardsData && window.scratchCardsData[ticketNumber]) {
+                  const scratchData = window.scratchCardsData[ticketNumber];
                   
-                  // Apply scratched areas
-                  ctx.globalCompositeOperation = 'destination-out';
-                  circleAreas.forEach(area => {
-                    ctx.beginPath();
-                    ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
-                    ctx.fill();
+                  // Restore each circle's scratch areas
+                  Object.keys(cardData.scratchedAreas).forEach(circleId => {
+                    const circleAreas = cardData.scratchedAreas[circleId];
+                    if (scratchData.circles[circleId]) {
+                      const ctx = scratchData.circles[circleId].ctx;
+                      
+                      // Apply scratched areas
+                      ctx.globalCompositeOperation = 'destination-out';
+                      circleAreas.forEach(area => {
+                        ctx.beginPath();
+                        ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                      });
+                      ctx.globalCompositeOperation = 'source-over';
+                      
+                      // Update local scratch data
+                      scratchData.circles[circleId].scratchedAreas = circleAreas;
+                      scratchData.scratchedAreas[circleId] = circleAreas;
+                    }
                   });
-                  ctx.globalCompositeOperation = 'source-over';
-                  
-                  // Update local scratch data
-                  scratchData.circles[circleId].scratchedAreas = circleAreas;
-                  scratchData.scratchedAreas[circleId] = circleAreas;
                 }
               });
             }
-          });
-        }
       } else {
         console.log('[Scratch] No saved progress found in localStorage');
-      }
+          }
     } catch (error) {
       console.error('[Scratch] Error loading progress from localStorage:', error);
-    }
+        }
   }
   
   function showProgressSavedNotification() {
@@ -3886,8 +3887,8 @@ jQuery(document).ready(function($) {
     
     // Play spinning sound right before starting animation
     gameSounds.playSpinning();
-    window.slotsSpinningStarted = true;
-    
+      window.slotsSpinningStarted = true;
+      
     // Get product prizes data
     const productPrizes = currentProduct.prizes || [];
     
@@ -4302,9 +4303,9 @@ jQuery(document).ready(function($) {
           const segmentText = wheelInstance.segments[segmentNum].text;
           // Try exact match first
           if (segmentText === targetPrize || segmentText === decodedTargetPrize) {
-            targetSegmentNumber = segmentNum;
-            console.log('[Game] Found target segment:', segmentNum, 'for prize:', targetPrize);
-            break;
+          targetSegmentNumber = segmentNum;
+          console.log('[Game] Found target segment:', segmentNum, 'for prize:', targetPrize);
+          break;
           }
           // Try partial match for monetary values
           if (decodedTargetPrize.includes('£') && segmentText.includes('£')) {
@@ -4777,12 +4778,12 @@ jQuery(document).ready(function($) {
             
             // Update auto-reveal button state (only if currentProduct exists)
             if (currentProduct && currentProduct.tickets) {
-              updateAutoRevealButtonState();
+            updateAutoRevealButtonState();
             }
             
             // Update remaining cards count after reset (only if currentProduct exists)
             if (currentProduct && currentProduct.tickets) {
-              updateRemainingCardsCount();
+            updateRemainingCardsCount();
             }
             
             // Reload the page to show fresh game state
