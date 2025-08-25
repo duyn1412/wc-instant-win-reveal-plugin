@@ -389,6 +389,12 @@ jQuery(document).ready(function($) {
         .done(function(res) {
           console.log('[InstantWin] product reveal response:', res);
           if (res && res.success) {
+            // For scratch game, reveal all remaining tickets first
+            if (currentProduct && currentProduct.mode === 'scratch' && currentProduct.tickets.length > 0) {
+              console.log('[Scratch] Instant Reveal clicked - revealing all remaining tickets first');
+              revealAllTickets();
+            }
+            
             // Process the reveal results and show appropriate messages
             processInstantRevealResults(res);
           } else {
