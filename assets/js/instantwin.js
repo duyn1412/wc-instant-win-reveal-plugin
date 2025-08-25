@@ -4532,11 +4532,14 @@ jQuery(document).ready(function($) {
     // Add loading animation to the entire game canvas
     $('#instantwin-game-canvas').addClass('processing-loading');
     
-    // Update global revealed products list
+    // Update global revealed products list and define all variables at function level
     let isRevealAll = false; // Define outside the if block for scope
+    let revealedProducts = [];
+    let totalProducts = 0;
+    let allProductsRevealed = false;
     
     if (response.data && response.data.revealed_products) {
-      let revealedProducts = response.data.revealed_products;
+      revealedProducts = response.data.revealed_products;
       
       // Ensure it's always an array (handle object case from PHP)
       if (typeof revealedProducts === 'object' && !Array.isArray(revealedProducts)) {
@@ -4552,8 +4555,8 @@ jQuery(document).ready(function($) {
       isRevealAll = response.data && response.data.is_reveal_all === true;
       
       // Check if ALL products are now revealed after this individual reveal
-      const totalProducts = products ? products.length : 0;
-      const allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
+      totalProducts = products ? products.length : 0;
+      allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
       
       console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', totalProducts);
       console.log('[InstantWin] Server response is_reveal_all:', response.data ? response.data.is_reveal_all : 'undefined');
