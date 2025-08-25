@@ -297,47 +297,70 @@ jQuery(document).ready(function($) {
       
       // If button says "View Results", show the results popup instead of revealing
       if (buttonText === 'View Results') {
-        console.log('[Game] View Results clicked - loading final results from server');
+        console.log('[Game] View Results clicked - checking for available results');
         
-        // Load final results from order meta
-        $.post(instantWin.ajax_url, {
-          action: 'instantwin_get_final_results',
-          order_id: instantWin.order_id,
-          nonce: instantWin.nonce
-        })
-        .done(function(res) {
-          console.log('[Game] Final results response:', res);
-          if (res && res.success && res.data && res.data.final_results !== undefined) {
-            // Format the final results for the popup
-            const finalResults = res.data.final_results;
-            let winsData = [];
-            
-            // Always process finalResults, even if empty (empty means all loses)
-            if (finalResults && Array.isArray(finalResults)) {
-              winsData = finalResults.map(win => ({
-                name: win.product_name || 'Unknown Product',
-                prizes: [{
-                  name: win.prize_name || 'Unknown Prize',
-                  ticket: win.ticket_number || 'Unknown'
-                }]
-              }));
-            }
-            // Note: If finalResults is empty array, it means all games were loses
-            // showWinPopup will handle empty winsData correctly by showing lose popup
-            
-            console.log('[Game] Showing View Results popup with data:', winsData);
-            showWinPopup(winsData);
+        // Check if we have local results from individual reveals
+        if (window.lastRevealedProducts && window.lastRevealedProducts.length > 0) {
+          console.log('[Game] Using local revealed products data for View Results');
+          
+          // Get wins data from the last reveal response that was stored
+          let winsData = [];
+          
+          // Check if we have wins data stored locally
+          if (window.lastWinsData && Array.isArray(window.lastWinsData)) {
+            winsData = window.lastWinsData;
+            console.log('[Game] Using stored wins data:', winsData);
           } else {
-            console.log('[Game] No final results found, showing lose popup');
-            // Fallback if no results found - show lose popup
-            showWinPopup([]);
+            console.log('[Game] No stored wins data, showing lose popup');
+            // No wins data stored, show lose popup
+            winsData = [];
           }
-        })
-        .fail(function(xhr, status, err) {
-          console.error('[Game] Error loading final results:', status, err);
-          // Fallback on error - show lose popup
-          showWinPopup([]);
-        });
+          
+          console.log('[Game] Showing View Results popup with local data:', winsData);
+          showWinPopup(winsData);
+        } else {
+          console.log('[Game] No local data, loading final results from server');
+          
+          // Load final results from order meta (fallback for reveal all scenarios)
+          $.post(instantWin.ajax_url, {
+            action: 'instantwin_get_final_results',
+            order_id: instantWin.order_id,
+            nonce: instantWin.nonce
+          })
+          .done(function(res) {
+            console.log('[Game] Final results response:', res);
+            if (res && res.success && res.data && res.data.final_results !== undefined) {
+              // Format the final results for the popup
+              const finalResults = res.data.final_results;
+              let winsData = [];
+              
+              // Always process finalResults, even if empty (empty means all loses)
+              if (finalResults && Array.isArray(finalResults)) {
+                winsData = finalResults.map(win => ({
+                  name: win.product_name || 'Unknown Product',
+                  prizes: [{
+                    name: win.prize_name || 'Unknown Prize',
+                    ticket: win.ticket_number || 'Unknown'
+                  }]
+                }));
+              }
+              // Note: If finalResults is empty array, it means all games were loses
+              // showWinPopup will handle empty winsData correctly by showing lose popup
+              
+              console.log('[Game] Showing View Results popup with server data:', winsData);
+              showWinPopup(winsData);
+            } else {
+              console.log('[Game] No final results found, showing lose popup');
+              // Fallback if no results found - show lose popup
+              showWinPopup([]);
+            }
+          })
+          .fail(function(xhr, status, err) {
+            console.error('[Game] Error loading final results:', status, err);
+            // Fallback on error - show lose popup
+            showWinPopup([]);
+          });
+        }
         
         return;
       }
@@ -4607,6 +4630,10 @@ jQuery(document).ready(function($) {
         }]
       }));
     }
+    
+    // Store wins data globally for View Results functionality
+    window.lastWinsData = winsData;
+    console.log('[InstantWin] Stored wins data globally for View Results:', window.lastWinsData);
     
     // Note: Final results are now saved to order meta for "View Results" functionality
     console.log('[InstantWin] Final results saved to order meta for View Results popup');
