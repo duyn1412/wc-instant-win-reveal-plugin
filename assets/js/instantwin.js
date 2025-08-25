@@ -4547,20 +4547,27 @@ jQuery(document).ready(function($) {
       window.lastRevealedProducts = revealedProducts;
       console.log('[InstantWin] Updated revealed products:', window.lastRevealedProducts);
       
-      // Check if this was a "reveal all" (multiple products revealed)
-      isRevealAll = window.lastRevealedProducts.length > 1 || 
-                   (products && window.lastRevealedProducts.length === products.length);
-      console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', products ? products.length : 'undefined');
+      // Check if this was a "reveal all" (ALL products revealed in one action)
+      // NOT just multiple products revealed from individual reveals
+      // We need to check if ALL products are now revealed after this individual reveal
+      const totalProducts = products ? products.length : 0;
+      const allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
       
-      if (isRevealAll) {
-        // Update lobby to show all games as completed
-        console.log('[InstantWin] Reveal all detected - updating lobby and disabling button');
-        showGameLobby(); // Refresh lobby with updated revealed status
-        
-        // Change button to "View Results" so users can reopen popup
+      // This is only "reveal all" if we started from lobby and revealed everything at once
+      // Individual reveals should NOT trigger "View Results" button
+      isRevealAll = false; // Individual reveals are never "reveal all"
+      
+      console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', totalProducts);
+      console.log('[InstantWin] All products revealed?', allProductsRevealed);
+      
+      // Only change button to "View Results" if ALL products are revealed AND this was the last one
+      if (allProductsRevealed) {
+        console.log('[InstantWin] All products now revealed - changing button to "View Results"');
         $('.instant-reveal-trigger').prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
-        console.log('[InstantWin] Button changed to "View Results" for reopening popup');
       }
+      
+      // Note: Individual reveals don't trigger lobby refresh or button change
+      // Only "reveal all" from lobby would do that
     }
     
     // Get wins data (can be empty array for no wins)
