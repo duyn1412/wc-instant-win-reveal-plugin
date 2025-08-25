@@ -4547,15 +4547,13 @@ jQuery(document).ready(function($) {
       window.lastRevealedProducts = revealedProducts;
       console.log('[InstantWin] Updated revealed products:', window.lastRevealedProducts);
       
-      // Check if this was a "reveal all" (ALL products revealed in one action)
-      // NOT just multiple products revealed from individual reveals
-      // We need to check if ALL products are now revealed after this individual reveal
-      const totalProducts = products ? products.length : 0;
-      const allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
-      
       // Check if this was a "reveal all" from lobby (ALL products revealed in one action)
       // OR if all products are now revealed after individual reveals
       isRevealAll = response.data && response.data.is_reveal_all === true;
+      
+      // Check if ALL products are now revealed after this individual reveal
+      const totalProducts = products ? products.length : 0;
+      const allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
       
       console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', totalProducts);
       console.log('[InstantWin] Server response is_reveal_all:', response.data ? response.data.is_reveal_all : 'undefined');
