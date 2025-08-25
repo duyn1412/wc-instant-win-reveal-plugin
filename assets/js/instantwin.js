@@ -4575,7 +4575,18 @@ jQuery(document).ready(function($) {
       } else if (allProductsRevealed) {
         // Individual reveals: only change button to "View Results" if ALL products are revealed
         console.log('[InstantWin] All products now revealed - changing button to "View Results"');
-        $('.instant-reveal-trigger').prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
+        
+        // Find and update the button
+        const $button = $('.instant-reveal-trigger');
+        console.log('[InstantWin] Found button:', $button.length, 'buttons');
+        
+        if ($button.length > 0) {
+          $button.prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
+          console.log('[InstantWin] Button updated successfully. Current text:', $button.text());
+          console.log('[InstantWin] Button classes:', $button.attr('class'));
+        } else {
+          console.error('[InstantWin] No instant-reveal-trigger button found!');
+        }
       }
       
       // Note: Individual reveals don't trigger lobby refresh or button change
