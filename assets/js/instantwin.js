@@ -392,8 +392,13 @@ jQuery(document).ready(function($) {
       
       const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible');
       
+      // Check if all games are already revealed
+      const revealedProducts = window.lastRevealedProducts || [];
+      const allGamesRevealed = products && products.length > 0 && revealedProducts.length === products.length;
+      
       // We're in a game if we have currentProduct AND we have an active game container visible
-      const isInGame = hasCurrentProduct && hasActiveGame;
+      // AND not all games are revealed
+      const isInGame = hasCurrentProduct && hasActiveGame && !allGamesRevealed;
       const isInLobby = !isInGame;
       
       console.log('[Debug] ===== INSTANT REVEAL BUTTON LOGIC =====');
@@ -405,13 +410,22 @@ jQuery(document).ready(function($) {
       console.log('[Debug] Slots container visible:', $slotsContainer.is(':visible'));
       console.log('[Debug] Scratch container visible:', $scratchContainer.is(':visible'));
       console.log('[Debug] Has active game:', hasActiveGame);
+      console.log('[Debug] All games revealed:', allGamesRevealed);
+      console.log('[Debug] Revealed products count:', revealedProducts.length);
+      console.log('[Debug] Total products count:', products ? products.length : 0);
       console.log('[Debug] currentProductIdx:', currentProductIdx);
       console.log('[Debug] hasCurrentProduct:', hasCurrentProduct);
       console.log('[Debug] isInGame:', isInGame);
       console.log('[Debug] isInLobby:', isInLobby);
       console.log('[Debug] ===========================================');
       
-      if (isInLobby) {
+      if (allGamesRevealed) {
+        // All games are already revealed - show message and don't allow reveal
+        console.log('[Game] All games already revealed - cannot reveal again');
+        alert('🎉 All games have already been revealed! Click "View Results" to see your prizes.');
+        $btn.prop('disabled', false).text('Instant Reveal');
+        return;
+      } else if (isInLobby) {
         // In lobby: reveal all games
         console.log('[Game] In lobby - revealing all games');
         callInstantRevealAllFunction();
