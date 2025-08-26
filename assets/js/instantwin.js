@@ -372,15 +372,23 @@ jQuery(document).ready(function($) {
       $btn.prop('disabled', true).text('Processing...');
       
       // Check if we're in the lobby (reveal all) or in a game (reveal individual)
-      // We're in a game if we have a currentProduct and we're not in the lobby view
+      // We're in a game if we have a currentProduct and we're actively playing a game
       const $gameLobby = $('.game-lobby-page');
       const $gameContainer = $gameLobby.parent().find('#instantwin-game-area');
-      const isInGame = currentProductIdx !== undefined && currentProductIdx >= 0 && $gameContainer.is(':visible');
+      
+      // More accurate detection: we're in a game if we have currentProduct AND we're not in lobby view
+      // AND we have a specific game mode active (wheel, slots, scratch)
+      const hasCurrentProduct = currentProductIdx !== undefined && currentProductIdx >= 0;
+      const isInLobbyView = $gameLobby.is(':visible') && !$gameContainer.find('.instantwin-play-container').is(':visible');
+      const isInGame = hasCurrentProduct && !isInLobbyView;
       const isInLobby = !isInGame;
       
       console.log('[Debug] Game container (#instantwin-game-area) visible:', $gameContainer.is(':visible'));
       console.log('[Debug] Game lobby (.game-lobby-page) visible:', $gameLobby.is(':visible'));
+      console.log('[Debug] Play container visible:', $gameContainer.find('.instantwin-play-container').is(':visible'));
       console.log('[Debug] currentProductIdx:', currentProductIdx);
+      console.log('[Debug] hasCurrentProduct:', hasCurrentProduct);
+      console.log('[Debug] isInLobbyView:', isInLobbyView);
       console.log('[Debug] isInGame:', isInGame);
       console.log('[Debug] isInLobby:', isInLobby);
       
