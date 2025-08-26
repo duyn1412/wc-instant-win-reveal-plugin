@@ -388,7 +388,7 @@ jQuery(document).ready(function($) {
       // Search in entire page, not just in gameContainer
       const $wheelContainer = $('.wheel-container');
       const $slotsContainer = $('.slots-container');
-      const $scratchContainer = $('.scratch-card-large');
+      const $scratchContainer = $('.scratch-container'); // Fixed: was .scratch-card-large
       
       const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible');
       
@@ -406,9 +406,9 @@ jQuery(document).ready(function($) {
       console.log('[Debug] Game lobby (.game-lobby-page) visible:', $gameLobby.is(':visible'));
       console.log('[Debug] Play container (.instantwin-play-container) visible:', playContainerVisible);
       console.log('[Debug] Play container selector found:', $playContainer.length, 'elements');
-      console.log('[Debug] Wheel container visible:', $wheelContainer.is(':visible'));
-      console.log('[Debug] Slots container visible:', $slotsContainer.is(':visible'));
-      console.log('[Debug] Scratch container visible:', $scratchContainer.is(':visible'));
+      console.log('[Debug] Wheel container (.wheel-container) visible:', $wheelContainer.is(':visible'));
+      console.log('[Debug] Slots container (.slots-container) visible:', $slotsContainer.is(':visible'));
+      console.log('[Debug] Scratch container (.scratch-container) visible:', $scratchContainer.is(':visible'));
       console.log('[Debug] Has active game:', hasActiveGame);
       console.log('[Debug] All games revealed:', allGamesRevealed);
       console.log('[Debug] Revealed products count:', revealedProducts.length);
