@@ -383,10 +383,16 @@ jQuery(document).ready(function($) {
       // Check if we're in lobby view (no active game being played)
       const $playContainer = $gameContainer.find('.instantwin-play-container');
       const playContainerVisible = $playContainer.is(':visible');
-      const isInLobbyView = $gameLobby.is(':visible') && !playContainerVisible;
       
-      // We're in a game if we have currentProduct AND play container is visible
-      const isInGame = hasCurrentProduct && playContainerVisible;
+      // Check if we're actively playing a specific game (wheel, slots, scratch)
+      const $wheelContainer = $gameContainer.find('.wheel-container');
+      const $slotsContainer = $gameContainer.find('.slots-container');
+      const $scratchContainer = $gameContainer.find('.scratch-card-large');
+      
+      const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible');
+      
+      // We're in a game if we have currentProduct AND we have an active game container visible
+      const isInGame = hasCurrentProduct && hasActiveGame;
       const isInLobby = !isInGame;
       
       console.log('[Debug] ===== INSTANT REVEAL BUTTON LOGIC =====');
@@ -394,9 +400,12 @@ jQuery(document).ready(function($) {
       console.log('[Debug] Game lobby (.game-lobby-page) visible:', $gameLobby.is(':visible'));
       console.log('[Debug] Play container (.instantwin-play-container) visible:', playContainerVisible);
       console.log('[Debug] Play container selector found:', $playContainer.length, 'elements');
+      console.log('[Debug] Wheel container visible:', $wheelContainer.is(':visible'));
+      console.log('[Debug] Slots container visible:', $slotsContainer.is(':visible'));
+      console.log('[Debug] Scratch container visible:', $scratchContainer.is(':visible'));
+      console.log('[Debug] Has active game:', hasActiveGame);
       console.log('[Debug] currentProductIdx:', currentProductIdx);
       console.log('[Debug] hasCurrentProduct:', hasCurrentProduct);
-      console.log('[Debug] isInLobbyView:', isInLobbyView);
       console.log('[Debug] isInGame:', isInGame);
       console.log('[Debug] isInLobby:', isInLobby);
       console.log('[Debug] ===========================================');
