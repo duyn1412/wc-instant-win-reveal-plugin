@@ -64,6 +64,10 @@ class WC_Instant_Win_Reveal {
         add_action( 'wp_ajax_instantwin_reveal_product', [ $this, 'ajax_reveal_product' ] );
         add_action( 'wp_ajax_nopriv_instantwin_reveal_product', [ $this, 'ajax_reveal_product' ] );
         
+        // Save individual game results to order meta
+        add_action( 'wp_ajax_instantwin_save_individual_results', [ $this, 'ajax_save_individual_results' ] );
+        add_action( 'wp_ajax_nopriv_instantwin_save_individual_results', [ $this, 'ajax_save_individual_results' ] );
+        
         // Auto-reveal state management
         add_action( 'wp_ajax_save_auto_reveal_state', [ $this, 'ajax_save_auto_reveal_state' ] );
         add_action( 'wp_ajax_nopriv_save_auto_reveal_state', [ $this, 'ajax_save_auto_reveal_state' ] );
@@ -1462,17 +1466,67 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
             return;
         }
         
-        // Get final results from order meta
+        // Get final results from order meta (for reveal all)
         $final_results = get_post_meta( $order_id, '_instantwin_final_results', true );
         
-        if ( ! $final_results ) {
-            wp_send_json_error( 'No final results found' );
+        // Get revealed products from order meta (for individual reveals)
+        $revealed_products = get_post_meta( $order_id, '_instantwin_revealed_products', true );
+        
+        // If we have final results (reveal all), use those
+        if ( $final_results ) {
+            wp_send_json_success([
+                'final_results' => $final_results
+            ]);
             return;
         }
         
-        wp_send_json_success([
-            'final_results' => $final_results
-        ]);
+        // If no final results but we have revealed products (individual reveals), build results from them
+        if ( $revealed_products && is_array($revealed_products) && count($revealed_products) > 0 ) {
+            $individual_results = [];
+            
+            foreach ( $revealed_products as $product_id ) {
+                $product = wc_get_product( $product_id );
+                if ( ! $product ) continue;
+                
+                // Get wins for this product
+                $instantWins = get_field( 'instant_tickets_prizes', $product_id );
+                if ( ! $instantWins ) continue;
+                
+                $order = wc_get_order( $order_id );
+                if ( ! $order ) continue;
+                
+                // Find the order item for this product
+                foreach ( $order->get_items() as $item ) {
+                    if ( $item->get_product_id() == $product_id ) {
+                        // Check each ticket against current winning configurations
+                        foreach ( $item->get_formatted_meta_data() as $meta ) {
+                            if ( $meta->key !== 'Ticket number' ) continue;
+                            
+                            $ticket = $meta->value;
+                            foreach ( $instantWins as $win ) {
+                                $winning = array_map( 'trim', explode( ',', $win['winning_ticket'] ) );
+                                if ( in_array( $ticket, $winning ) ) {
+                                    $individual_results[] = [
+                                        'product_name' => $product->get_title(),
+                                        'prize_name' => $win['instant_prize'],
+                                        'ticket_number' => $ticket
+                                    ];
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            wp_send_json_success([
+                'final_results' => $individual_results
+            ]);
+            return;
+        }
+        
+        // No results found
+        wp_send_json_error( 'No final results found' );
     }
     
     public function ajax_reveal_product() {
