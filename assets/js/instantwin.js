@@ -4635,8 +4635,18 @@ jQuery(document).ready(function($) {
     }
     
     // Store wins data globally for View Results functionality
-    window.lastWinsData = winsData;
-    console.log('[InstantWin] Stored wins data globally for View Results:', window.lastWinsData);
+    // Accumulate wins from all games instead of overwriting
+    if (!window.lastWinsData) {
+      window.lastWinsData = [];
+    }
+    
+    // Append new wins to existing wins (don't overwrite)
+    if (winsData && Array.isArray(winsData) && winsData.length > 0) {
+      window.lastWinsData = window.lastWinsData.concat(winsData);
+      console.log('[InstantWin] Appended new wins to global wins data. Total wins now:', window.lastWinsData.length);
+    }
+    
+    console.log('[InstantWin] Current global wins data for View Results:', window.lastWinsData);
     
     // Note: Final results are now saved to order meta for "View Results" functionality
     console.log('[InstantWin] Final results saved to order meta for View Results popup');
