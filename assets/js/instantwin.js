@@ -303,26 +303,23 @@ jQuery(document).ready(function($) {
         console.log('[Game] Debug - window.lastRevealedProducts:', window.lastRevealedProducts);
         console.log('[Game] Debug - window.lastWinsData:', window.lastWinsData);
         
-        if (window.lastRevealedProducts && window.lastRevealedProducts.length > 0) {
+        // Always try to load from server first (more reliable after page reload)
+        // Only use local data if we're in the same session and have valid data
+        const hasValidLocalData = window.lastRevealedProducts && window.lastRevealedProducts.length > 0 && 
+                                 window.lastWinsData && Array.isArray(window.lastWinsData) && 
+                                 window.lastWinsData.length > 0;
+        
+        if (hasValidLocalData) {
           console.log('[Game] Using local revealed products data for View Results');
           
           // Get wins data from the last reveal response that was stored
-          let winsData = [];
-          
-          // Check if we have wins data stored locally
-          if (window.lastWinsData && Array.isArray(window.lastWinsData)) {
-            winsData = window.lastWinsData;
-            console.log('[Game] Using stored wins data:', winsData);
-          } else {
-            console.log('[Game] No stored wins data, showing lose popup');
-            // No wins data stored, show lose popup
-            winsData = [];
-          }
+          let winsData = window.lastWinsData;
+          console.log('[Game] Using stored wins data:', winsData);
           
           console.log('[Game] Showing View Results popup with local data:', winsData);
           showWinPopup(winsData);
         } else {
-          console.log('[Game] No local data, loading final results from server');
+          console.log('[Game] No valid local data, loading final results from server');
           
           // Load final results from order meta (fallback for reveal all scenarios)
           $.post(instantWin.ajax_url, {
