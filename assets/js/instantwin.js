@@ -300,6 +300,9 @@ jQuery(document).ready(function($) {
         console.log('[Game] View Results clicked - checking for available results');
         
         // Check if we have local results from individual reveals
+        console.log('[Game] Debug - window.lastRevealedProducts:', window.lastRevealedProducts);
+        console.log('[Game] Debug - window.lastWinsData:', window.lastWinsData);
+        
         if (window.lastRevealedProducts && window.lastRevealedProducts.length > 0) {
           console.log('[Game] Using local revealed products data for View Results');
           
