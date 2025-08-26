@@ -385,9 +385,10 @@ jQuery(document).ready(function($) {
       const playContainerVisible = $playContainer.is(':visible');
       
       // Check if we're actively playing a specific game (wheel, slots, scratch)
-      const $wheelContainer = $gameContainer.find('.wheel-container');
-      const $slotsContainer = $gameContainer.find('.slots-container');
-      const $scratchContainer = $gameContainer.find('.scratch-card-large');
+      // Search in entire page, not just in gameContainer
+      const $wheelContainer = $('.wheel-container');
+      const $slotsContainer = $('.slots-container');
+      const $scratchContainer = $('.scratch-card-large');
       
       const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible');
       
