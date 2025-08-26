@@ -4656,7 +4656,32 @@ jQuery(document).ready(function($) {
     
     console.log('[InstantWin] Current global wins data for View Results:', window.lastWinsData);
     
-    // Note: Final results are now saved to order meta for "View Results" functionality
+    // IMPORTANT: Save results to server order meta for View Results functionality
+    // This ensures data persists after page reload for both reveal all and individual reveals
+    if (winsData && Array.isArray(winsData) && winsData.length > 0) {
+      console.log('[InstantWin] Saving individual game results to server order meta...');
+      
+      // Save current wins to server order meta
+      $.post(instantWin.ajax_url, {
+        action: 'instantwin_save_individual_results',
+        order_id: instantWin.order_id,
+        product_id: currentProductIdx !== undefined && products[currentProductIdx] ? products[currentProductIdx].product_id : null,
+        wins_data: winsData,
+        nonce: instantWin.nonce
+      })
+      .done(function(saveRes) {
+        console.log('[InstantWin] Individual results save response:', saveRes);
+        if (saveRes && saveRes.success) {
+          console.log('[InstantWin] Individual game results saved to server successfully');
+        } else {
+          console.error('[InstantWin] Failed to save individual results to server:', saveRes);
+        }
+      })
+      .fail(function(xhr, status, err) {
+        console.error('[InstantWin] Error saving individual results to server:', status, err);
+      });
+    }
+    
     console.log('[InstantWin] Final results saved to order meta for View Results popup');
     
     console.log('[InstantWin] Wins data for popup:', winsData);
