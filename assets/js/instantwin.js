@@ -379,18 +379,27 @@ jQuery(document).ready(function($) {
       // More accurate detection: we're in a game if we have currentProduct AND we're not in lobby view
       // AND we have a specific game mode active (wheel, slots, scratch)
       const hasCurrentProduct = currentProductIdx !== undefined && currentProductIdx >= 0;
-      const isInLobbyView = $gameLobby.is(':visible') && !$gameContainer.find('.instantwin-play-container').is(':visible');
-      const isInGame = hasCurrentProduct && !isInLobbyView;
+      
+      // Check if we're in lobby view (no active game being played)
+      const $playContainer = $gameContainer.find('.instantwin-play-container');
+      const playContainerVisible = $playContainer.is(':visible');
+      const isInLobbyView = $gameLobby.is(':visible') && !playContainerVisible;
+      
+      // We're in a game if we have currentProduct AND play container is visible
+      const isInGame = hasCurrentProduct && playContainerVisible;
       const isInLobby = !isInGame;
       
+      console.log('[Debug] ===== INSTANT REVEAL BUTTON LOGIC =====');
       console.log('[Debug] Game container (#instantwin-game-area) visible:', $gameContainer.is(':visible'));
       console.log('[Debug] Game lobby (.game-lobby-page) visible:', $gameLobby.is(':visible'));
-      console.log('[Debug] Play container visible:', $gameContainer.find('.instantwin-play-container').is(':visible'));
+      console.log('[Debug] Play container (.instantwin-play-container) visible:', playContainerVisible);
+      console.log('[Debug] Play container selector found:', $playContainer.length, 'elements');
       console.log('[Debug] currentProductIdx:', currentProductIdx);
       console.log('[Debug] hasCurrentProduct:', hasCurrentProduct);
       console.log('[Debug] isInLobbyView:', isInLobbyView);
       console.log('[Debug] isInGame:', isInGame);
       console.log('[Debug] isInLobby:', isInLobby);
+      console.log('[Debug] ===========================================');
       
       if (isInLobby) {
         // In lobby: reveal all games
@@ -4658,10 +4667,14 @@ jQuery(document).ready(function($) {
     
     // IMPORTANT: Save results to server order meta for View Results functionality
     // This ensures data persists after page reload for both reveal all and individual reveals
+    // TODO: Implement server-side action 'instantwin_save_individual_results' to enable this functionality
     if (winsData && Array.isArray(winsData) && winsData.length > 0) {
-      console.log('[InstantWin] Saving individual game results to server order meta...');
+      console.log('[InstantWin] TODO: Individual game results should be saved to server order meta');
+      console.log('[InstantWin] Need to implement server action: instantwin_save_individual_results');
+      console.log('[InstantWin] For now, results are only stored locally in window.lastWinsData');
       
-      // Save current wins to server order meta
+      // TODO: Uncomment when server action is implemented
+      /*
       $.post(instantWin.ajax_url, {
         action: 'instantwin_save_individual_results',
         order_id: instantWin.order_id,
@@ -4680,6 +4693,7 @@ jQuery(document).ready(function($) {
       .fail(function(xhr, status, err) {
         console.error('[InstantWin] Error saving individual results to server:', status, err);
       });
+      */
     }
     
     console.log('[InstantWin] Final results saved to order meta for View Results popup');
