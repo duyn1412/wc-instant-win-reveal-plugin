@@ -323,6 +323,7 @@ jQuery(document).ready(function($) {
           showWinPopup(winsData);
         } else {
           console.log('[Game] No local data, loading final results from server');
+          console.log('[Game] Debug - Calling instantwin_get_final_results with order_id:', instantWin.order_id);
           
           // Load final results from order meta (fallback for reveal all scenarios)
           $.post(instantWin.ajax_url, {
@@ -331,7 +332,15 @@ jQuery(document).ready(function($) {
             nonce: instantWin.nonce
           })
           .done(function(res) {
-            console.log('[Game] Final results response:', res);
+            console.log('[Game] ===== VIEW RESULTS SERVER RESPONSE =====');
+            console.log('[Game] Raw server response:', res);
+            console.log('[Game] Response success:', res && res.success);
+            console.log('[Game] Response data:', res && res.data);
+            console.log('[Game] Final results:', res && res.data && res.data.final_results);
+            console.log('[Game] Final results type:', typeof (res && res.data && res.data.final_results));
+            console.log('[Game] Final results length:', res && res.data && res.data.final_results ? res.data.final_results.length : 'N/A');
+            console.log('[Game] ===========================================');
+            
             if (res && res.success && res.data && res.data.final_results !== undefined) {
               // Format the final results for the popup
               const finalResults = res.data.final_results;
@@ -350,16 +359,24 @@ jQuery(document).ready(function($) {
               // Note: If finalResults is empty array, it means all games were loses
               // showWinPopup will handle empty winsData correctly by showing lose popup
               
+              console.log('[Game] Processed winsData for popup:', winsData);
               console.log('[Game] Showing View Results popup with server data:', winsData);
               showWinPopup(winsData);
             } else {
               console.log('[Game] No final results found, showing lose popup');
+              console.log('[Game] Debug - Response structure:', {
+                hasRes: !!res,
+                hasSuccess: !!(res && res.success),
+                hasData: !!(res && res.data),
+                hasFinalResults: !!(res && res.data && res.data.final_results !== undefined)
+              });
               // Fallback if no results found - show lose popup
               showWinPopup([]);
             }
           })
           .fail(function(xhr, status, err) {
             console.error('[Game] Error loading final results:', status, err);
+            console.error('[Game] XHR response:', xhr.responseText);
             // Fallback on error - show lose popup
             showWinPopup([]);
           });

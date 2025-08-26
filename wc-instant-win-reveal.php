@@ -1461,19 +1461,25 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
     public function ajax_get_final_results() {
         $order_id = isset($_POST['order_id']) ? intval($_POST['order_id']) : 0;
         
+        error_log( "[InstantWin] ajax_get_final_results called with order_id: {$order_id}" );
+        
         if ( ! $order_id ) {
+            error_log( "[InstantWin] ajax_get_final_results: Invalid order ID" );
             wp_send_json_error( 'Invalid order ID' );
             return;
         }
         
         // Get final results from order meta (for reveal all)
         $final_results = get_post_meta( $order_id, '_instantwin_final_results', true );
+        error_log( "[InstantWin] ajax_get_final_results: _instantwin_final_results = " . print_r($final_results, true) );
         
         // Get revealed products from order meta (for individual reveals)
         $revealed_products = get_post_meta( $order_id, '_instantwin_revealed_products', true );
+        error_log( "[InstantWin] ajax_get_final_results: _instantwin_revealed_products = " . print_r($revealed_products, true) );
         
         // If we have final results (reveal all), use those
         if ( $final_results ) {
+            error_log( "[InstantWin] ajax_get_final_results: Using final results (reveal all), count: " . count($final_results) );
             wp_send_json_success([
                 'final_results' => $final_results
             ]);
@@ -1482,30 +1488,46 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         
         // If no final results but we have revealed products (individual reveals), build results from them
         if ( $revealed_products && is_array($revealed_products) && count($revealed_products) > 0 ) {
+            error_log( "[InstantWin] ajax_get_final_results: Building results from revealed products, count: " . count($revealed_products) );
             $individual_results = [];
             
             foreach ( $revealed_products as $product_id ) {
+                error_log( "[InstantWin] ajax_get_final_results: Processing product_id: {$product_id}" );
                 $product = wc_get_product( $product_id );
-                if ( ! $product ) continue;
+                if ( ! $product ) {
+                    error_log( "[InstantWin] ajax_get_final_results: Product {$product_id} not found" );
+                    continue;
+                }
                 
                 // Get wins for this product
                 $instantWins = get_field( 'instant_tickets_prizes', $product_id );
-                if ( ! $instantWins ) continue;
+                if ( ! $instantWins ) {
+                    error_log( "[InstantWin] ajax_get_final_results: Product {$product_id} has no instant wins" );
+                    continue;
+                }
+                
+                error_log( "[InstantWin] ajax_get_final_results: Product {$product_id} has " . count($instantWins) . " instant wins" );
                 
                 $order = wc_get_order( $order_id );
-                if ( ! $order ) continue;
+                if ( ! $order ) {
+                    error_log( "[InstantWin] ajax_get_final_results: Order {$order_id} not found" );
+                    continue;
+                }
                 
                 // Find the order item for this product
                 foreach ( $order->get_items() as $item ) {
                     if ( $item->get_product_id() == $product_id ) {
+                        error_log( "[InstantWin] ajax_get_final_results: Found order item for product {$product_id}" );
                         // Check each ticket against current winning configurations
                         foreach ( $item->get_formatted_meta_data() as $meta ) {
                             if ( $meta->key !== 'Ticket number' ) continue;
                             
                             $ticket = $meta->value;
+                            error_log( "[InstantWin] ajax_get_final_results: Checking ticket: {$ticket}" );
                             foreach ( $instantWins as $win ) {
                                 $winning = array_map( 'trim', explode( ',', $win['winning_ticket'] ) );
                                 if ( in_array( $ticket, $winning ) ) {
+                                    error_log( "[InstantWin] ajax_get_final_results: WINNING TICKET FOUND! Product: {$product->get_title()}, Prize: {$win['instant_prize']}, Ticket: {$ticket}" );
                                     $individual_results[] = [
                                         'product_name' => $product->get_title(),
                                         'prize_name' => $win['instant_prize'],
@@ -1519,6 +1541,9 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                 }
             }
             
+            error_log( "[InstantWin] ajax_get_final_results: Built individual results, count: " . count($individual_results) );
+            error_log( "[InstantWin] ajax_get_final_results: Individual results = " . print_r($individual_results, true) );
+            
             wp_send_json_success([
                 'final_results' => $individual_results
             ]);
@@ -1526,6 +1551,7 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         }
         
         // No results found
+        error_log( "[InstantWin] ajax_get_final_results: No results found for order {$order_id}" );
         wp_send_json_error( 'No final results found' );
     }
     
