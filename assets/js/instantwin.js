@@ -303,25 +303,28 @@ jQuery(document).ready(function($) {
         console.log('[Game] Debug - window.lastRevealedProducts:', window.lastRevealedProducts);
         console.log('[Game] Debug - window.lastWinsData:', window.lastWinsData);
         
-        if (window.lastRevealedProducts && window.lastRevealedProducts.length > 0) {
-          console.log('[Game] Using local revealed products data for View Results');
+        // Check if we have both revealed products AND wins data locally
+        const hasCompleteLocalData = window.lastRevealedProducts && window.lastRevealedProducts.length > 0 && 
+                                   window.lastWinsData && Array.isArray(window.lastWinsData) && 
+                                   window.lastWinsData.length > 0;
+        
+        if (hasCompleteLocalData) {
+          console.log('[Game] Using complete local data for View Results');
           
           // Get wins data from the last reveal response that was stored
-          let winsData = [];
-          
-          // Check if we have wins data stored locally
-          if (window.lastWinsData && Array.isArray(window.lastWinsData)) {
-            winsData = window.lastWinsData;
-            console.log('[Game] Using stored wins data:', winsData);
-          } else {
-            console.log('[Game] No stored wins data, showing lose popup');
-            // No wins data stored, show lose popup
-            winsData = [];
-          }
+          let winsData = window.lastWinsData;
+          console.log('[Game] Using stored wins data:', winsData);
           
           console.log('[Game] Showing View Results popup with local data:', winsData);
           showWinPopup(winsData);
         } else {
+          console.log('[Game] Incomplete local data, loading final results from server');
+          console.log('[Game] Debug - Local data status:', {
+            hasRevealedProducts: !!(window.lastRevealedProducts && window.lastRevealedProducts.length > 0),
+            hasWinsData: !!(window.lastWinsData && Array.isArray(window.lastWinsData) && window.lastWinsData.length > 0),
+            revealedProductsCount: window.lastRevealedProducts ? window.lastRevealedProducts.length : 0,
+            winsDataCount: window.lastWinsData && Array.isArray(window.lastWinsData) ? window.lastWinsData.length : 0
+          });
           console.log('[Game] No local data, loading final results from server');
           console.log('[Game] Debug - Calling instantwin_get_final_results with order_id:', instantWin.order_id);
           
