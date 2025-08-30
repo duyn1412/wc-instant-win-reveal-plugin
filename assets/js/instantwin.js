@@ -8,44 +8,81 @@ jQuery(document).ready(function($) {
   let wheelInstance = null;
   let playHistory = [];
   
+  // Audio functionality for scratch sound - declare early
+  let scratchAudio = null;
+  let scratchAudioLoaded = false;
+  let scratchAudioFailed = false;
+  let audioContext = null;
+  
+  // Preload scratch sound on page load
+  console.log('[Audio] Preloading scratch sound...');
+  initScratchSound();
+  
   // Sound system
   const gameSounds = {
     spinning: null,
+    wheelSpinning: null, // New wheel-specific sound
     winning: null,
     
     init: function() {
       try {
         const spinningUrl = instantWin.plugin_url + '/assets/sound/spin.mp3';
+        const wheelSpinningUrl = instantWin.plugin_url + '/assets/sound/wheel-sound.mp3';
         const winningUrl = instantWin.plugin_url + '/assets/sound/win.wav';
         
         console.log('[Sounds] Initializing sound system...');
         console.log('[Sounds] Spinning sound URL:', spinningUrl);
+        console.log('[Sounds] Wheel spinning sound URL:', wheelSpinningUrl);
         console.log('[Sounds] Winning sound URL:', winningUrl);
         
         this.spinning = new Audio(spinningUrl);
+        this.wheelSpinning = new Audio(wheelSpinningUrl);
         this.winning = new Audio(winningUrl);
         this.spinning.loop = true;
+        this.wheelSpinning.loop = true;
         this.spinning.volume = 0.6;
+        this.wheelSpinning.volume = 0.6;
         this.winning.volume = 0.8;
         
         // Preload sounds
         this.spinning.load();
+        this.wheelSpinning.load();
         this.winning.load();
         
         console.log('[Sounds] Sound system initialized successfully');
         console.log('[Sounds] Spinning audio object:', this.spinning);
+        console.log('[Sounds] Wheel spinning audio object:', this.wheelSpinning);
         console.log('[Sounds] Winning audio object:', this.winning);
         
-        // Test sound loading
+        // Test sound loading (only log once)
+        let spinningLoaded = false;
+        let wheelSpinningLoaded = false;
+        let winningLoaded = false;
+        
         this.spinning.addEventListener('canplaythrough', () => {
+          if (!spinningLoaded) {
           console.log('[Sounds] Spinning sound loaded successfully');
+            spinningLoaded = true;
+          }
+        });
+        this.wheelSpinning.addEventListener('canplaythrough', () => {
+          if (!wheelSpinningLoaded) {
+            console.log('[Sounds] Wheel spinning sound loaded successfully');
+            wheelSpinningLoaded = true;
+          }
         });
         this.winning.addEventListener('canplaythrough', () => {
+          if (!winningLoaded) {
           console.log('[Sounds] Winning sound loaded successfully');
+            winningLoaded = true;
+          }
         });
         
         this.spinning.addEventListener('error', (e) => {
           console.error('[Sounds] Error loading spinning sound:', e);
+        });
+        this.wheelSpinning.addEventListener('error', (e) => {
+          console.error('[Sounds] Error loading wheel spinning sound:', e);
         });
         this.winning.addEventListener('error', (e) => {
           console.error('[Sounds] Error loading winning sound:', e);
@@ -56,7 +93,7 @@ jQuery(document).ready(function($) {
       }
     },
     
-    playSpinning: function() {
+    playSpinning: function(enableLoop = false) {
       console.log('[Sounds] Attempting to play spinning sound...');
       // Enable sounds if not already enabled (user interaction from clicking play button)
       if (!soundsEnabled) {
@@ -66,16 +103,26 @@ jQuery(document).ready(function($) {
       if (this.spinning) {
         console.log('[Sounds] Spinning audio object found:', this.spinning);
         try {
+          // Only play if not already playing and no other game is active
+          if ((this.spinning.paused || this.spinning.ended) && !window.gameActive) {
+            window.gameActive = true; // Set global flag
+            // Set loop based on parameter (true for wheel, false for slots)
+            this.spinning.loop = enableLoop;
           this.spinning.currentTime = 0;
-          console.log('[Sounds] Set currentTime to 0, attempting to play spinning...');
+            console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play spinning...');
           this.spinning.play().then(() => {
-            console.log('[Sounds] Spinning sound started playing successfully');
+              console.log('[Sounds] Spinning sound started playing successfully with loop=' + enableLoop);
           }).catch(e => {
             console.warn('[Sounds] Could not play spinning sound:', e);
             console.warn('[Sounds] Error details:', e.message);
+              window.gameActive = false; // Reset flag on error
           });
+          } else {
+            console.log('[Sounds] Spinning sound already playing or game active, skipping...');
+          }
         } catch (error) {
           console.warn('[Sounds] Error playing spinning sound:', error);
+          window.gameActive = false; // Reset flag on error
         }
       } else {
         console.warn('[Sounds] Spinning audio object is null/undefined');
@@ -85,10 +132,64 @@ jQuery(document).ready(function($) {
     stopSpinning: function() {
       if (this.spinning) {
         try {
+          this.spinning.loop = false; // Stop looping
           this.spinning.pause();
           this.spinning.currentTime = 0;
+          window.gameActive = false; // Reset global flag
+          console.log('[Sounds] Spinning sound stopped and loop disabled');
         } catch (error) {
           console.warn('[Sounds] Error stopping spinning sound:', error);
+          window.gameActive = false; // Reset flag on error
+        }
+      }
+    },
+    
+    playWheelSpinning: function(enableLoop = false) {
+      console.log('[Sounds] Attempting to play wheel spinning sound...');
+      // Enable sounds if not already enabled (user interaction from clicking play button)
+      if (!soundsEnabled) {
+        console.log('[Sounds] Enabling sounds due to play button interaction...');
+        soundsEnabled = true;
+      }
+      if (this.wheelSpinning) {
+        console.log('[Sounds] Wheel spinning audio object found:', this.wheelSpinning);
+        try {
+          // Only play if not already playing and no other game is active
+          if ((this.wheelSpinning.paused || this.wheelSpinning.ended) && !window.gameActive) {
+            window.gameActive = true; // Set global flag
+            // Set loop based on parameter
+            this.wheelSpinning.loop = enableLoop;
+            this.wheelSpinning.currentTime = 0;
+            console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play wheel spinning...');
+            this.wheelSpinning.play().then(() => {
+              console.log('[Sounds] Wheel spinning sound started playing successfully with loop=' + enableLoop);
+            }).catch(e => {
+              console.warn('[Sounds] Could not play wheel spinning sound:', e);
+              console.warn('[Sounds] Error details:', e.message);
+              window.gameActive = false; // Reset flag on error
+            });
+          } else {
+            console.log('[Sounds] Wheel spinning sound already playing or game active, skipping...');
+          }
+        } catch (error) {
+          console.warn('[Sounds] Error playing wheel spinning sound:', error);
+          window.gameActive = false; // Reset flag on error
+        }
+      } else {
+        console.warn('[Sounds] Wheel spinning audio object is null/undefined');
+      }
+    },
+    
+    stopWheelSpinning: function() {
+      if (this.wheelSpinning) {
+        try {
+          this.wheelSpinning.loop = false; // Stop looping
+          this.wheelSpinning.pause();
+          this.wheelSpinning.currentTime = 0;
+          window.gameActive = false; // Reset global flag
+          console.log('[Sounds] Wheel spinning sound stopped and loop disabled');
+        } catch (error) {
+          console.warn('[Sounds] Error stopping wheel spinning sound:', error);
         }
       }
     },
@@ -196,47 +297,93 @@ jQuery(document).ready(function($) {
       
       // If button says "View Results", show the results popup instead of revealing
       if (buttonText === 'View Results') {
-        console.log('[Game] View Results clicked - loading final results from server');
+        console.log('[Game] View Results clicked - checking for available results');
         
-        // Load final results from order meta
-        $.post(instantWin.ajax_url, {
-          action: 'instantwin_get_final_results',
-          order_id: instantWin.order_id,
-          nonce: instantWin.nonce
-        })
-        .done(function(res) {
-          console.log('[Game] Final results response:', res);
-          if (res && res.success && res.data && res.data.final_results !== undefined) {
-            // Format the final results for the popup
-            const finalResults = res.data.final_results;
-            let winsData = [];
+        // Check if we have local results from individual reveals
+        console.log('[Game] Debug - window.lastRevealedProducts:', window.lastRevealedProducts);
+        console.log('[Game] Debug - window.lastWinsData:', window.lastWinsData);
+        
+        // Check if we have both revealed products AND wins data locally
+        const hasCompleteLocalData = window.lastRevealedProducts && window.lastRevealedProducts.length > 0 && 
+                                   window.lastWinsData && Array.isArray(window.lastWinsData) && 
+                                   window.lastWinsData.length > 0;
+        
+        if (hasCompleteLocalData) {
+          console.log('[Game] Using complete local data for View Results');
+          
+          // Get wins data from the last reveal response that was stored
+          let winsData = window.lastWinsData;
+          console.log('[Game] Using stored wins data:', winsData);
+          
+          console.log('[Game] Showing View Results popup with local data:', winsData);
+          showWinPopup(winsData);
+        } else {
+          console.log('[Game] Incomplete local data, loading final results from server');
+          console.log('[Game] Debug - Local data status:', {
+            hasRevealedProducts: !!(window.lastRevealedProducts && window.lastRevealedProducts.length > 0),
+            hasWinsData: !!(window.lastWinsData && Array.isArray(window.lastWinsData) && window.lastWinsData.length > 0),
+            revealedProductsCount: window.lastRevealedProducts ? window.lastRevealedProducts.length : 0,
+            winsDataCount: window.lastWinsData && Array.isArray(window.lastWinsData) ? window.lastWinsData.length : 0
+          });
+          console.log('[Game] No local data, loading final results from server');
+          console.log('[Game] Debug - Calling instantwin_get_final_results with order_id:', instantWin.order_id);
+          
+          // Load final results from order meta (fallback for reveal all scenarios)
+          $.post(instantWin.ajax_url, {
+            action: 'instantwin_get_final_results',
+            order_id: instantWin.order_id,
+            nonce: instantWin.nonce
+          })
+          .done(function(res) {
+            console.log('[Game] ===== VIEW RESULTS SERVER RESPONSE =====');
+            console.log('[Game] Raw server response:', res);
+            console.log('[Game] Response success:', res && res.success);
+            console.log('[Game] Response data:', res && res.data);
+            console.log('[Game] Final results:', res && res.data && res.data.final_results);
+            console.log('[Game] Final results type:', typeof (res && res.data && res.data.final_results));
+            console.log('[Game] Final results length:', res && res.data && res.data.final_results ? res.data.final_results.length : 'N/A');
+            console.log('[Game] ===========================================');
             
-            // Always process finalResults, even if empty (empty means all loses)
-            if (finalResults && Array.isArray(finalResults)) {
-              winsData = finalResults.map(win => ({
-                name: win.product_name || 'Unknown Product',
-                prizes: [{
-                  name: win.prize_name || 'Unknown Prize',
-                  ticket: win.ticket_number || 'Unknown'
-                }]
-              }));
+            if (res && res.success && res.data && res.data.final_results !== undefined) {
+              // Format the final results for the popup
+              const finalResults = res.data.final_results;
+              let winsData = [];
+              
+              // Always process finalResults, even if empty (empty means all loses)
+              if (finalResults && Array.isArray(finalResults)) {
+                winsData = finalResults.map(win => ({
+                  name: win.product_name || 'Unknown Product',
+                  prizes: [{
+                    name: win.prize_name || 'Unknown Prize',
+                    ticket: win.ticket_number || 'Unknown'
+                  }]
+                }));
+              }
+              // Note: If finalResults is empty array, it means all games were loses
+              // showWinPopup will handle empty winsData correctly by showing lose popup
+              
+              console.log('[Game] Processed winsData for popup:', winsData);
+              console.log('[Game] Showing View Results popup with server data:', winsData);
+              showWinPopup(winsData);
+            } else {
+              console.log('[Game] No final results found, showing lose popup');
+              console.log('[Game] Debug - Response structure:', {
+                hasRes: !!res,
+                hasSuccess: !!(res && res.success),
+                hasData: !!(res && res.data),
+                hasFinalResults: !!(res && res.data && res.data.final_results !== undefined)
+              });
+              // Fallback if no results found - show lose popup
+              showWinPopup([]);
             }
-            // Note: If finalResults is empty array, it means all games were loses
-            // showWinPopup will handle empty winsData correctly by showing lose popup
-            
-            console.log('[Game] Showing View Results popup with data:', winsData);
-            showWinPopup(winsData);
-          } else {
-            console.log('[Game] No final results found, showing lose popup');
-            // Fallback if no results found - show lose popup
+          })
+          .fail(function(xhr, status, err) {
+            console.error('[Game] Error loading final results:', status, err);
+            console.error('[Game] XHR response:', xhr.responseText);
+            // Fallback on error - show lose popup
             showWinPopup([]);
-          }
-        })
-        .fail(function(xhr, status, err) {
-          console.error('[Game] Error loading final results:', status, err);
-          // Fallback on error - show lose popup
-          showWinPopup([]);
-        });
+          });
+        }
         
         return;
       }
@@ -245,18 +392,60 @@ jQuery(document).ready(function($) {
       $btn.prop('disabled', true).text('Processing...');
       
       // Check if we're in the lobby (reveal all) or in a game (reveal individual)
-      // We're in a game if the specific game container is visible, otherwise we're in lobby
+      // We're in a game if we have a currentProduct and we're actively playing a game
       const $gameLobby = $('.game-lobby-page');
       const $gameContainer = $gameLobby.parent().find('#instantwin-game-area');
-      const isInGame = $gameContainer.is(':visible');
+      
+      // More accurate detection: we're in a game if we have currentProduct AND we're not in lobby view
+      // AND we have a specific game mode active (wheel, slots, scratch)
+      const hasCurrentProduct = currentProductIdx !== undefined && currentProductIdx >= 0;
+      
+      // Check if we're in lobby view (no active game being played)
+      const $playContainer = $gameContainer.find('.instantwin-play-container');
+      const playContainerVisible = $playContainer.is(':visible');
+      
+      // Check if we're actively playing a specific game (wheel, slots, scratch)
+      // Search in entire page, not just in gameContainer
+      const $wheelContainer = $('.wheel-container');
+      const $slotsContainer = $('.slots-container');
+      const $scratchContainer = $('.scratch-container'); // Fixed: was .scratch-card-large
+      
+      const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible');
+      
+      // Check if all games are already revealed
+      const revealedProducts = window.lastRevealedProducts || [];
+      const allGamesRevealed = products && products.length > 0 && revealedProducts.length === products.length;
+      
+      // We're in a game if we have currentProduct AND we have an active game container visible
+      // AND not all games are revealed
+      const isInGame = hasCurrentProduct && hasActiveGame && !allGamesRevealed;
       const isInLobby = !isInGame;
       
-      console.log('[Debug] Game container (#instantwin-game-area) visible:', isInGame);
+      console.log('[Debug] ===== INSTANT REVEAL BUTTON LOGIC =====');
+      console.log('[Debug] Game container (#instantwin-game-area) visible:', $gameContainer.is(':visible'));
       console.log('[Debug] Game lobby (.game-lobby-page) visible:', $gameLobby.is(':visible'));
-      console.log('[Debug] isInLobby:', isInLobby);
+      console.log('[Debug] Play container (.instantwin-play-container) visible:', playContainerVisible);
+      console.log('[Debug] Play container selector found:', $playContainer.length, 'elements');
+      console.log('[Debug] Wheel container (.wheel-container) visible:', $wheelContainer.is(':visible'));
+      console.log('[Debug] Slots container (.slots-container) visible:', $slotsContainer.is(':visible'));
+      console.log('[Debug] Scratch container (.scratch-container) visible:', $scratchContainer.is(':visible'));
+      console.log('[Debug] Has active game:', hasActiveGame);
+      console.log('[Debug] All games revealed:', allGamesRevealed);
+      console.log('[Debug] Revealed products count:', revealedProducts.length);
+      console.log('[Debug] Total products count:', products ? products.length : 0);
       console.log('[Debug] currentProductIdx:', currentProductIdx);
+      console.log('[Debug] hasCurrentProduct:', hasCurrentProduct);
+      console.log('[Debug] isInGame:', isInGame);
+      console.log('[Debug] isInLobby:', isInLobby);
+      console.log('[Debug] ===========================================');
       
-      if (isInLobby) {
+      if (allGamesRevealed) {
+        // All games are already revealed - show message and don't allow reveal
+        console.log('[Game] All games already revealed - cannot reveal again');
+        alert('🎉 All games have already been revealed! Click "View Results" to see your prizes.');
+        $btn.prop('disabled', false).text('Instant Reveal');
+        return;
+      } else if (isInLobby) {
         // In lobby: reveal all games
         console.log('[Game] In lobby - revealing all games');
         callInstantRevealAllFunction();
@@ -288,6 +477,12 @@ jQuery(document).ready(function($) {
         .done(function(res) {
           console.log('[InstantWin] product reveal response:', res);
           if (res && res.success) {
+            // For scratch game, reveal all remaining tickets first
+            if (currentProduct && currentProduct.mode === 'scratch' && currentProduct.tickets.length > 0) {
+              console.log('[Scratch] Instant Reveal clicked - revealing all remaining tickets first');
+              revealAllTickets();
+            }
+            
             // Process the reveal results and show appropriate messages
             processInstantRevealResults(res);
           } else {
@@ -333,9 +528,17 @@ jQuery(document).ready(function($) {
       },
       dataType: 'json'
     }).done(function(response) {
+      console.log('[AJAX] Response from instantwin_get_game_data:', response);
       if (response.success) {
         products = response.tickets || [];
         allPrizes = response.prizes || [];
+        console.log('[AJAX] All prizes from response:', allPrizes);
+        
+        // Debug: Check which product is wheel game
+        const wheelProduct = products.find(p => p.mode === 'wheel');
+        if (wheelProduct) {
+          console.log('[AJAX] 🎯 Wheel game found:', wheelProduct.product_id, wheelProduct.title);
+        }
         const revealedProducts = response.revealed_products || [];
         
         // Update nonce from response for future requests
@@ -647,6 +850,7 @@ jQuery(document).ready(function($) {
   
   function setupWheelGame() {
     console.log('[Game] Setting up wheel game');
+    console.log('[Game] Current product ID:', currentProduct.product_id);
     
     // Remove any old canvas and create professional wheel container
     $('#instantwin-game-canvas').empty();
@@ -674,9 +878,12 @@ jQuery(document).ready(function($) {
     const canvasId = 'instantwin-wheel-canvas';
     const pointerId = 'instantwin-wheel-pointer';
     $('#instantwin-game-canvas').append(`
-      <div class="wheel-container" style="position:relative;max-width:600px;margin:0 auto;">
-        <canvas id="${canvasId}" width="600" height="600" aria-label="Prize Wheel"></canvas>
-        <div id="${pointerId}" style="position:absolute;top:18px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:20px solid #e74c3c;z-index:2;"></div>
+      <div class="wheel-container" style="position:relative;max-width:400px;margin:0 auto;">
+        <canvas id="${canvasId}" width="400" height="400" aria-label="Prize Wheel" style="display:block;"></canvas>
+        <div id="${pointerId}" style="position:absolute;top:50%;left:-20px;transform:translateY(-50%);width:auto;height:auto;z-index:2;">
+          <img src="${instantWin.plugin_url}/assets/images/instantwin-wheel-pointer.svg" alt="Wheel Pointer" style="width:auto;height:auto;" />
+        </div>
+        <div class="wheel-center-knob" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:25px;height:25px;background:white;border-radius:50%;z-index:3;"></div>
       </div>
     `);
     
@@ -692,34 +899,140 @@ jQuery(document).ready(function($) {
       return;
     }
     
-    // Build segments alternating between prizes and X
+    // Debug: Check prizes data from current product
+    console.log('[Game] Current product prizes:', currentProduct.prizes);
+    console.log('[Game] Current product ID:', currentProduct.product_id);
+    console.log('[Game] Current product mode:', currentProduct.mode);
+    
+    // Use prizes from current product instead of global allPrizes
+    const productPrizes = currentProduct.prizes || [];
+    console.log('[Game] Product prizes count:', productPrizes.length);
+    productPrizes.forEach((prize, index) => {
+      console.log('[Game] Prize', index, ':', prize.name, 'wheel_color:', prize.wheel_color, 'wheel_text_color:', prize.wheel_text_color);
+    });
+    
+    // Build segments alternating between prizes and X (only one X)
     const allSegments = [];
-    const maxSegments = Math.max(allPrizes.length * 2, 8); // At least 8 segments
+    const maxSegments = productPrizes.length + 1; // All prizes + 1 X
+    
+    // Get canvas for creating gradients
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    const canvasCenter = canvas.height / 2;
+    
+    // Create gradient objects for each prize color
+    const createRadialGradient = (baseColor, ctx, canvasCenter) => {
+      const radGradient = ctx.createRadialGradient(canvasCenter, canvasCenter, 0, canvasCenter, canvasCenter, canvasCenter);
+      
+      // Convert hex to RGB for manipulation
+      const hex = baseColor.replace('#', '');
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      
+      // Create lighter version (center)
+      const lighterR = Math.min(255, r + 30);
+      const lighterG = Math.min(255, g + 30);
+      const lighterB = Math.min(255, b + 30);
+      const lighterColor = `#${lighterR.toString(16).padStart(2, '0')}${lighterG.toString(16).padStart(2, '0')}${lighterB.toString(16).padStart(2, '0')}`;
+      
+      // Create darker version (edge)
+      const darkerR = Math.max(0, r - 50);
+      const darkerG = Math.max(0, g - 50);
+      const darkerB = Math.max(0, b - 50);
+      const darkerColor = `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+      
+      radGradient.addColorStop(0, lighterColor);    // Center: lighter color
+      radGradient.addColorStop(0.5, baseColor);     // Middle: original color
+      radGradient.addColorStop(1, darkerColor);     // Edge: darker color
+      
+      return radGradient;
+    };
     
     for (let i = 0; i < maxSegments; i++) {
-      if (i % 2 === 0 && allPrizes[Math.floor(i/2)]) {
+      if (i < productPrizes.length) {
         // Prize segment
-        const prize = allPrizes[Math.floor(i/2)];
-        const prizeText = typeof prize === 'string' ? prize : (prize.name || 'Prize');
+        const prize = productPrizes[i];
+        let prizeText = typeof prize === 'string' ? prize : (prize.name || 'Prize');
+        
+        // Debug: Log prize data
+        console.log('[Wheel] Product ID:', currentProduct.product_id);
+        console.log('[Wheel] Prize data:', prize);
+        console.log('[Wheel] Prize wheel_color:', prize.wheel_color);
+        console.log('[Wheel] Prize wheel_text_color:', prize.wheel_text_color);
+        
+        // Extract only the monetary value (e.g., "Golden Palm - £1000" becomes "£1000")
+        if (prizeText.includes('£')) {
+          const match = prizeText.match(/£[\d,]+/);
+          if (match) {
+            prizeText = match[0];
+          }
+        }
+        
+        const fillColor = prize.wheel_color || '#0096ff';
+        const textColor = prize.wheel_text_color || '#000';
+        console.log('[Wheel] Using fill color:', fillColor);
+        console.log('[Wheel] Using text color:', textColor);
+        
+        // Create darker version of fillColor for gradient effect
+        const createDarkerColor = (color) => {
+          // Convert hex to RGB for manipulation
+          const hex = color.replace('#', '');
+          const r = parseInt(hex.substr(0, 2), 16);
+          const g = parseInt(hex.substr(2, 2), 16);
+          const b = parseInt(hex.substr(4, 2), 16);
+          
+          // Create darker versions
+          const darkerR = Math.max(0, r - 50);
+          const darkerG = Math.max(0, g - 50);
+          const darkerB = Math.max(0, b - 50);
+          
+          return `#${darkerR.toString(16).padStart(2, '0')}${darkerG.toString(16).padStart(2, '0')}${darkerB.toString(16).padStart(2, '0')}`;
+        };
+        
+        const darkerColor = createDarkerColor(fillColor);
+        
+        // Create radial gradient for this segment
+        const radGradient = createRadialGradient(fillColor, ctx, canvasCenter);
+        
+        console.log('[Wheel] Original color:', fillColor);
+        console.log('[Wheel] Created radial gradient for segment:', i);
+        console.log('[Wheel] Gradient object type:', typeof radGradient);
+        console.log('[Wheel] Gradient object:', radGradient);
+        
+        const segment = {
+          'fillStyle': radGradient, // Use Canvas radial gradient object
+          'text': prizeText,
+          'textFillStyle': textColor,
+          'textFontSize': 18,
+          'strokeStyle': '#ffffff',
+          'lineWidth': 3
+        };
+        console.log('[Wheel] Creating segment for', prizeText, 'with radial gradient and textFillStyle:', textColor);
+        allSegments.push(segment);
+      } else {
+        // Only one X segment - also with gradient
+        const xGradient = ctx.createRadialGradient(canvasCenter, canvasCenter, 0, canvasCenter, canvasCenter, canvasCenter);
+        xGradient.addColorStop(0, '#ffffff');    // Center: white
+        xGradient.addColorStop(0.5, '#eeeeee');  // Middle: light gray
+        xGradient.addColorStop(1, '#dddddd');    // Edge: darker gray
+        
+        console.log('[Wheel] Creating X segment with radial gradient');
         
         allSegments.push({
-          'fillStyle': '#0096ff',
-          'text': prizeText,
-          'textFillStyle': '#000',
-          'textFontSize': 14
-        });
-      } else {
-        // Losing segment (X)
-        allSegments.push({
-          'fillStyle': '#ffcccc',
+          'fillStyle': xGradient, // Use Canvas radial gradient object
           'text': 'X',
           'textFillStyle': '#666',
-          'textFontSize': 16
+          'textFontSize': 20,
+          'strokeStyle': '#ffffff',
+          'lineWidth': 3
         });
       }
     }
     
+    
     console.log('[Game] Creating wheel with', allSegments.length, 'segments');
+    console.log('[Game] All segments data:', allSegments);
     
     wheelInstance = new Winwheel({
       'canvasId': canvasId,
@@ -740,11 +1053,34 @@ jQuery(document).ready(function($) {
           // console.log('[Wheel] Sound callback');
         }
       },
-      'pointerAngle': 0
+      'pointerAngle': 270
     });
     
     window._pirateWheel = wheelInstance;
     console.log('[Game] Wheel created successfully with', wheelInstance.numSegments, 'segments');
+    
+    // Force wheel to redraw with new colors
+    if (wheelInstance.draw) {
+      wheelInstance.draw();
+      console.log('[Game] Wheel redrawn with new colors');
+    }
+    
+    // Debug: Check if canvas is actually showing the colors
+    setTimeout(() => {
+      const canvas = document.getElementById(canvasId);
+      if (canvas) {
+        console.log('[Game] Canvas element found:', canvas);
+        console.log('[Game] Canvas width:', canvas.width, 'height:', canvas.height);
+        
+        // Check if there are any CSS rules affecting the canvas
+        const computedStyle = window.getComputedStyle(canvas);
+        console.log('[Game] Canvas computed styles:', {
+          backgroundColor: computedStyle.backgroundColor,
+          border: computedStyle.border,
+          filter: computedStyle.filter
+        });
+      }
+    }, 1000);
     
     // Spins remaining counter above spin button
     const spinsRemaining = $(`<div class="plays-left">spins remaining: ${currentProduct.tickets.length}</div>`);
@@ -837,6 +1173,7 @@ jQuery(document).ready(function($) {
         });
     });
     
+    
     // Add spin button below the wheel
     $('#instantwin-game-canvas').append(spinBtn);
     
@@ -845,6 +1182,11 @@ jQuery(document).ready(function($) {
     
     // Add test buttons for each segment
     addWheelTestButtons();
+    console.log('ddallPrizes', allPrizes);
+
+
+ 
+
   }
   
   function addWheelTestButtons() {
@@ -871,6 +1213,11 @@ jQuery(document).ready(function($) {
         buttonsRow.append(prizeBtn);
       });
     }
+    
+    // Add Debug Game Types button
+    const debugBtn = $('<button class="test-btn" style="padding:8px 12px;font-size:12px;border:1px solid #6f42c1;background:#6f42c1;color:white;border-radius:4px;cursor:pointer;">🔍 Debug Game Types</button>');
+    debugBtn.click(() => debugGameTypes());
+    buttonsRow.append(debugBtn);
     
     testContainer.append(buttonsRow);
     $('#instantwin-game-canvas').append(testContainer);
@@ -912,6 +1259,95 @@ jQuery(document).ready(function($) {
     
     // Start wheel spin with test result
     startWheelSpin(targetPrize, 'TEST_TICKET', mockResponse);
+  }
+  
+  /**
+   * Debug function to check instant_win_game_type for all products
+   */
+  function debugGameTypes() {
+    console.log('[Debug] Checking game types for all products...');
+    
+    if (!instantWin || !instantWin.order_id) {
+      console.error('[Debug] No order ID available');
+      return;
+    }
+    
+    $.post(instantWin.ajax_url, {
+      action: 'instantwin_debug_game_types',
+      order_id: instantWin.order_id,
+      nonce: instantWin.nonce
+    })
+    .done(function(res) {
+      console.log('[Debug] ===== GAME TYPES DEBUG RESPONSE =====');
+      console.log('[Debug] Raw server response:', res);
+      
+      if (res && res.success && res.data) {
+        const data = res.data;
+        
+        // Show summary
+        if (data.summary) {
+          console.log('[Debug] ===== SUMMARY =====');
+          console.log(`[Debug] Total Products: ${data.summary.total_products}`);
+          console.log(`[Debug] Products in Game: ${data.summary.products_in_game}`);
+          console.log(`[Debug] Products Skipped: ${data.summary.products_skipped}`);
+          console.log('[Debug] ===================');
+        }
+        
+        // Show products that will appear in game lobby
+        if (data.products_in_game && data.products_in_game.length > 0) {
+          console.log('[Debug] ===== PRODUCTS IN GAME LOBBY =====');
+          data.products_in_game.forEach((product, index) => {
+            console.log(`[Debug] Game Product ${index + 1}:`, {
+              'Product ID': product.product_id,
+              'Title': product.title,
+              'Game Type': product.game_type_final,
+              'Has Prizes': product.has_instant_tickets_prizes,
+              'Prizes Count': product.prizes_count,
+              'Action': product.action
+            });
+            
+            // Log all post meta for debugging
+            if (product.post_meta_all) {
+              console.log(`[Debug] Product ${product.product_id} - All Post Meta:`, product.post_meta_all);
+            }
+          });
+        } else {
+          console.warn('[Debug] No products will appear in game lobby!');
+        }
+        
+        // Show products that were skipped
+        if (data.products_skipped && data.products_skipped.length > 0) {
+          console.log('[Debug] ===== PRODUCTS SKIPPED (NO GAME) =====');
+          data.products_skipped.forEach((product, index) => {
+            console.log(`[Debug] Skipped Product ${index + 1}:`, {
+              'Product ID': product.product_id,
+              'Title': product.title,
+              'Game Type': product.game_type_raw,
+              'Skip Reason': product.skip_reason,
+              'Action': product.action
+            });
+          });
+        }
+        
+        // Final warning if no products in game
+        if (!data.products_in_game || data.products_in_game.length === 0) {
+          console.error('[Debug] ⚠️ WARNING: No products will appear in game lobby!');
+          console.error('[Debug] This might mean:');
+          console.error('[Debug] 1. All products have instant_win_game_type = "no"');
+          console.error('[Debug] 2. All products have invalid instant_win_game_type');
+          console.error('[Debug] 3. No products have instant_win_game_type set');
+          console.error('[Debug] Products with "no" game type will still receive email notifications immediately.');
+        }
+      } else {
+        console.error('[Debug] Invalid response structure:', res);
+      }
+      
+      console.log('[Debug] ===========================================');
+    })
+    .fail(function(xhr, status, err) {
+      console.error('[Debug] Error checking game types:', status, err);
+      console.error('[Debug] XHR response:', xhr.responseText);
+    });
   }
   
 
@@ -1224,9 +1660,9 @@ jQuery(document).ready(function($) {
     
     const scratchHTML = `
       <div class="scratch-container">
-                <div class="scratch-header">
-          <h3>YOU HAVE <span id="remaining-cards-count">${currentProduct.tickets.length}</span> <span id="remaining-cards-text">${currentProduct.tickets.length === 1 ? 'SCRATCHCARD' : 'SCRATCHCARDS'}</span> REMAINING</h3>
-          <p>Scratch the silver area to reveal all your prizes!</p>
+        <div class="scratch-header">
+          <h3>You have <span id="remaining-cards-count">${currentProduct.tickets.length}</span> <span id="remaining-cards-text">${currentProduct.tickets.length === 1 ? 'scratchcard' : 'scratchcards'}</span> remaining</h3>
+          <p>Scratch now to see if you've won!</p>
         </div>
                 <div class="scratch-slider-container">
           <!-- Loading overlay -->
@@ -1239,14 +1675,14 @@ jQuery(document).ready(function($) {
           
           <div class="owl-carousel owl-theme" id="scratch-cards-slider">
             <!-- Individual scratch cards will be populated here -->
-          </div>
+        </div>
           
           <!-- Card counter and auto-reveal controls -->
           <div class="scratch-controls">
             ${currentProduct.tickets && currentProduct.tickets.length > 1 ? `
               <div class="card-counter">
                 Card <span id="current-card-number">1</span> of <span id="total-cards">${currentProduct.tickets.length}</span>
-              </div>
+        </div>
               
               <div class="auto-reveal-button-container">
                 <button id="auto-reveal-btn" class="auto-reveal-btn">
@@ -1280,6 +1716,20 @@ jQuery(document).ready(function($) {
     
     // Add auto-reveal button event handler
     $('#auto-reveal-btn').click(function() {
+      // Force initialize audio on first click
+      console.log('[Auto-Reveal] Button clicked - initializing audio...');
+      
+      // Resume audio context if suspended (required for autoplay)
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('[Audio] Audio context resumed from suspended state');
+        });
+      }
+      
+      if (!scratchAudio && !scratchAudioFailed) {
+        initScratchSound();
+      }
+      
       const $button = $(this);
       const $slider = $('#scratch-cards-slider');
       const currentIndex = $slider.find('.owl-item.active.center').index();
@@ -1294,6 +1744,32 @@ jQuery(document).ready(function($) {
       
       const ticketNumber = $currentCard.data('ticket');
       const isWin = $currentCard.find('.ticket-result-new').hasClass('win');
+      
+      // Play appropriate sound based on result
+      setTimeout(() => {
+        if (isWin) {
+          // Play WIN sound instead of scratch sound
+          console.log('[Auto-Reveal] Win detected - playing WIN sound');
+          if (gameSounds && gameSounds.winning) {
+            gameSounds.winning.currentTime = 0;
+            gameSounds.winning.play().then(() => {
+              console.log('[Auto-Reveal] WIN sound played successfully');
+            }).catch((error) => {
+              console.log('[Auto-Reveal] Error playing WIN sound:', error.message);
+              // Fallback to scratch sound if WIN sound fails
+              playScratchSound();
+            });
+          } else {
+            // Fallback to scratch sound if WIN sound not available
+            console.log('[Auto-Reveal] WIN sound not available, using scratch sound');
+            playScratchSound();
+          }
+        } else {
+          // Play scratch sound for non-win
+          console.log('[Auto-Reveal] Non-win detected - playing scratch sound');
+          playScratchSound();
+        }
+      }, 50);
       
       // Get prize from win content or from ticket data
       let prize = '';
@@ -1334,15 +1810,25 @@ jQuery(document).ready(function($) {
     
     // Update card counter and auto-reveal button state when slider changes
     $('#scratch-cards-slider').on('translated.owl.carousel', function() {
+      if (currentProduct && currentProduct.tickets) {
       updateCardCounter();
       updateAutoRevealButtonState();
+      }
     });
     
     // Initial card counter update
+    if (currentProduct && currentProduct.tickets) {
     updateCardCounter();
+    }
   }
   
   function updateCardCounter() {
+    // Check if currentProduct exists and has tickets
+    if (!currentProduct || !currentProduct.tickets) {
+      console.log('[Card Counter] No current product or tickets available, skipping counter update');
+      return;
+    }
+    
     const totalCards = currentProduct.tickets.length;
     
     // Don't update counter if only 1 card
@@ -1402,6 +1888,12 @@ jQuery(document).ready(function($) {
   }
 
   function updateRemainingCardsCount() {
+    // Check if currentProduct exists and has tickets
+    if (!currentProduct || !currentProduct.tickets) {
+      console.log('[Remaining Cards] No current product or tickets available, skipping count update');
+      return;
+    }
+    
     const totalCards = currentProduct.tickets.length;
     
     // Get all revealed cards and count unique ticket numbers
@@ -1420,7 +1912,7 @@ jQuery(document).ready(function($) {
     console.log('[Remaining Cards] All revealed cards in DOM:', revealedCards.length);
     
     $('#remaining-cards-count').text(remainingCards);
-    $('#remaining-cards-text').text(remainingCards === 1 ? 'SCRATCHCARD' : 'SCRATCHCARDS');
+    $('#remaining-cards-text').text(remainingCards === 1 ? 'scratchcard' : 'scratchcards');
   }
   
   function revealCurrentCard($card, isWin, prize) {
@@ -1755,6 +2247,12 @@ jQuery(document).ready(function($) {
   }
   
   function updateAutoRevealButtonState() {
+    // Check if currentProduct exists and has tickets
+    if (!currentProduct || !currentProduct.tickets) {
+      console.log('[Auto-Reveal] No current product or tickets available, skipping button update');
+      return;
+    }
+    
     const totalCards = currentProduct.tickets.length;
     
     // Don't update button if only 1 card (button won't exist)
@@ -1907,11 +2405,12 @@ jQuery(document).ready(function($) {
       // Find winning prize icon/image
       let winIcon = '🎁'; // default icon
       console.log('[Scratch] Looking for winning prize:', prize);
-      console.log('[Scratch] Available prizes:', allPrizes);
+      console.log('[Scratch] Current product prizes:', currentProduct.prizes);
       
-      if (allPrizes && allPrizes.length > 0) {
+      const productPrizes = currentProduct.prizes || [];
+      if (productPrizes && productPrizes.length > 0) {
         // First try to find exact match
-        let prizeObj = allPrizes.find(p => {
+        let prizeObj = productPrizes.find(p => {
           if (typeof p === 'string') {
             return p === prize;
           } else if (p && p.name) {
@@ -1922,7 +2421,7 @@ jQuery(document).ready(function($) {
         
         // If not found, try to find by different property names
         if (!prizeObj) {
-          prizeObj = allPrizes.find(p => {
+          prizeObj = productPrizes.find(p => {
             if (typeof p === 'object' && p) {
               return p.prize_name === prize || 
                      p.title === prize || 
@@ -1963,7 +2462,7 @@ jQuery(document).ready(function($) {
               console.log('[Scratch] Using d_prize_image:', winIcon);
             } else {
               // If no icon/image found, try using any available prize icon as fallback
-              const firstPrizeWithIcon = allPrizes.find(p => p && p.icon);
+              const firstPrizeWithIcon = productPrizes.find(p => p && p.icon);
               if (firstPrizeWithIcon) {
                 winIcon = firstPrizeWithIcon.icon;
                 console.log('[Scratch] Using fallback icon from first prize:', winIcon);
@@ -1971,11 +2470,11 @@ jQuery(document).ready(function($) {
             }
           }
         } else {
-          console.warn('[Scratch] Prize not found in allPrizes:', prize);
+          console.warn('[Scratch] Prize not found in product prizes:', prize);
           console.log('[Scratch] Trying first available prize as fallback');
           
           // Use first available prize icon as fallback
-          const fallbackPrize = allPrizes[0];
+          const fallbackPrize = productPrizes[0];
           if (fallbackPrize) {
             if (typeof fallbackPrize === 'string') {
               winIcon = fallbackPrize;
@@ -1988,7 +2487,7 @@ jQuery(document).ready(function($) {
           }
         }
       } else {
-        console.warn('[Scratch] No allPrizes data available');
+        console.warn('[Scratch] No product prizes data available');
       }
       
       console.log('[Scratch] Final winIcon:', winIcon);
@@ -1998,8 +2497,8 @@ jQuery(document).ready(function($) {
       
       // Get all available prize icons/images (excluding the winning prize for other rows)
       const availableIcons = [];
-      if (allPrizes && allPrizes.length > 0) {
-        allPrizes.forEach(prizeItem => {
+      if (productPrizes && productPrizes.length > 0) {
+        productPrizes.forEach(prizeItem => {
           // Skip the winning prize for other rows
           if (typeof prizeItem === 'string') {
             if (prizeItem !== prize) {
@@ -2052,9 +2551,10 @@ jQuery(document).ready(function($) {
     } else {
       // Lose ticket: No row has all same icons (3 rows x 4 cols)
       // Get all available prize icons/images
+      const productPrizes = currentProduct.prizes || [];
       const availableIcons = [];
-      if (allPrizes && allPrizes.length > 0) {
-        allPrizes.forEach(prize => {
+      if (productPrizes && productPrizes.length > 0) {
+        productPrizes.forEach(prize => {
           let prizeIcon = '🎁'; // default
           if (typeof prize === 'string') {
             prizeIcon = prize;
@@ -2113,11 +2613,12 @@ jQuery(document).ready(function($) {
   }
   
   function createAvailablePrizesHTML() {
-    if (!allPrizes || allPrizes.length === 0) {
+    const productPrizes = currentProduct.prizes || [];
+    if (!productPrizes || productPrizes.length === 0) {
       return '<p class="no-prizes">No prizes available</p>';
     }
     
-    const prizesHTML = allPrizes.map(prize => {
+    const prizesHTML = productPrizes.map(prize => {
       let prizeIcon = '🎁'; // default icon
       let prizeName = '';
       
@@ -2158,7 +2659,7 @@ jQuery(document).ready(function($) {
     // Determine items to show based on total cards
     let itemsToShow = 3; // Show 3 items for stacked effect
     let loopEnabled = totalCards > 1; // Enable loop if more than 1 card
-    let marginValue = -200; // Negative margin for stacked effect
+    let marginValue = 0; // No margin for single item display
     
     if (totalCards < 3) {
       itemsToShow = totalCards;
@@ -2177,6 +2678,7 @@ jQuery(document).ready(function($) {
       items: itemsToShow,
       loop: loopEnabled,
       margin: marginValue,
+      autoWidth:true,
       nav: totalCards > 1, // Only show nav if more than 1 card
       dots: false,
       center: totalCards > 1, // Center if more than 1 card
@@ -2184,6 +2686,9 @@ jQuery(document).ready(function($) {
       touchDrag: false,
       pullDrag: false,
       freeDrag: false,
+      smartSpeed: 600, // Smoother transition speed
+      animateIn: 'fadeIn',
+      animateOut: 'fadeOut',
       navText: ['<span class="nav-btn nav-prev">‹</span>', '<span class="nav-btn nav-next">›</span>'],
       responsive: {
         0: { 
@@ -2212,6 +2717,13 @@ jQuery(document).ready(function($) {
         console.log('[Scratch] Owl Carousel initialized');
         console.log('[Scratch] Total cards in slider:', $('.scratch-card-individual').length);
         console.log('[Scratch] Owl items count:', $('.owl-item').length);
+        
+        // Add smooth transition handling
+        const $slider = $('#scratch-cards-slider');
+        $slider.on('changed.owl.carousel', function(event) {
+          // Ensure smooth transitions between cards
+          $('.owl-item').css('transition', 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)');
+        });
         
         // Show/hide navigation arrows based on card count
         if (totalCards > 1) {
@@ -2297,7 +2809,7 @@ jQuery(document).ready(function($) {
     
     const ticketNumber = $card.data('ticket');
     const $circles = $card.find('.scratch-circle');
-    const $container = $card.find('.scratch-circles-container');
+    const $container = $card.find('.scratch-card-container');
     
     // Skip if card is already revealed
     if ($card.attr('data-revealed') === 'true' || $card.hasClass('revealed')) {
@@ -2314,205 +2826,163 @@ jQuery(document).ready(function($) {
       scratchedAreas: {}
     };
     
-    // Global scratch state for drag across multiple circles
-    let isGlobalScratching = false;
-    
-    // Add container-level mouse events for continuous dragging
-    $container.on('mousedown', function(e) {
-      isGlobalScratching = true;
-      console.log('[Scratch] Started global scratching');
+    // Initialize each circle canvas
+    $circles.each(function(index) {
+      const $circle = $(this);
+      const canvas = $circle.find('.circle-canvas')[0];
+      
+      if (!canvas) {
+        console.warn('[Scratch] No canvas found for circle:', index);
+        return;
+      }
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Set canvas size
+      canvas.width = 50;
+      canvas.height = 50;
+      
+      // Draw gradient gray and silver background
+      drawGradientBackground(ctx, canvas);
+      
+      // Store canvas data
+      window.scratchCardsData[ticketNumber].circles[index] = {
+        canvas: canvas,
+        ctx: ctx,
+        scratchedAreas: []
+      };
+      
+      // Restore any saved progress
+      restoreScratchProgress(canvas, ctx, ticketNumber, index);
     });
     
-    $container.on('mousemove', function(e) {
-      if (isGlobalScratching) {
-        // Find which circle is under the mouse
-        const elementUnder = document.elementFromPoint(e.clientX, e.clientY);
-        const $canvasUnder = $(elementUnder).closest('.scratch-circle').find('.circle-canvas');
-        if ($canvasUnder.length > 0) {
-          const canvas = $canvasUnder[0];
-          const rect = canvas.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          
-          // Scratch this circle
-          const ctx = canvas.getContext('2d');
-          ctx.globalCompositeOperation = 'destination-out';
-          ctx.beginPath();
-          ctx.arc(x, y, 15, 0, Math.PI * 2);
-          ctx.fill();
-        }
+    // Add container-level scratch events for continuous scratching
+    let isScratching = false;
+    
+    $container.on('mousedown touchstart', function(e) {
+      // Check if card is already completed
+      if ($card.attr('data-revealed') === 'true' || $card.hasClass('revealed') || $container.hasClass('scratching-disabled')) {
+        console.log('[Scratch] Card already completed, scratching disabled');
+        return;
+      }
+      
+      e.preventDefault();
+      e.stopPropagation();
+      isScratching = true;
+      console.log('[Scratch] Started continuous scratching on container');
+      
+      // Scratch at current position
+      scratchContainerAtPosition(e, $container, ticketNumber);
+    });
+    
+    $container.on('mousemove touchmove', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isScratching) {
+        scratchContainerAtPosition(e, $container, ticketNumber);
       }
     });
     
-    $container.on('mouseup mouseleave', function(e) {
-      isGlobalScratching = false;
-      console.log('[Scratch] Stopped global scratching');
-    });
-    
-    $circles.each(function(circleIndex) {
-      const $circle = $(this);
-      const $canvas = $circle.find('.circle-canvas');
-      const canvas = $canvas[0];
-      const ctx = canvas.getContext('2d');
-      const circleId = circleIndex;
-      
-      // Generate random gray gradient for each circle
-      const grayShades = [
-        ['#808080', '#a0a0a0'],
-        ['#777777', '#999999'], 
-        ['#888888', '#aaaaaa'],
-        ['#707070', '#909090'],
-        ['#757575', '#959595'],
-        ['#6a6a6a', '#8a8a8a'],
-        ['#7f7f7f', '#9f9f9f'],
-        ['#656565', '#858585']
-      ];
-      
-      const randomGradient = grayShades[Math.floor(Math.random() * grayShades.length)];
-      
-      // Create gradient background instead of scratch overlay
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, randomGradient[0]);
-      gradient.addColorStop(1, randomGradient[1]);
-      
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Set up scratch functionality
-      let isScratching = false;
-      let scratchedAreas = [];
-      
-      // Store circle data
-      window.scratchCardsData[ticketNumber].circles[circleIndex] = {
-        canvas: canvas,
-        ctx: ctx,
-        scratchedAreas: scratchedAreas
-      };
-      window.scratchCardsData[ticketNumber].scratchedAreas[circleId] = scratchedAreas;
-      
-      // Restore scratch progress if available
-      console.log('[Scratch] Attempting to restore progress for ticket:', ticketNumber, 'circle:', circleId);
-      restoreScratchProgress(canvas, ctx, ticketNumber, circleId);
-      
-      // Mouse events
-      $canvas.on('mousedown', function(e) {
-        isScratching = true;
-        scratchCircle(e, ctx, canvas, scratchedAreas);
-      });
-      
-      $canvas.on('mousemove', function(e) {
-        if (isScratching) {
-          scratchCircle(e, ctx, canvas, scratchedAreas);
-          
-          // Save progress continuously while scratching
-          saveScratchProgress(canvas, ctx, ticketNumber, circleId);
-        }
-      });
-      
-      $canvas.on('mouseup mouseleave', function() {
+    $container.on('mouseup touchend mouseleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isScratching) {
         isScratching = false;
-        ctx.globalCompositeOperation = 'source-over';
+        console.log('[Scratch] Stopped continuous scratching on container');
         
-        // Save scratch progress
-        saveScratchProgress(canvas, ctx, ticketNumber, circleId);
-        
-        // Check if all circles in this card are scratched
-        checkCardScratchCompletion($card, ticketNumber);
-      });
-      
-      // Touch events for mobile
-      $canvas.on('touchstart', function(e) {
-        e.preventDefault();
-        isScratching = true;
-        const touch = e.originalEvent.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const scratchEvent = {
-          offsetX: touch.clientX - rect.left,
-          offsetY: touch.clientY - rect.top
-        };
-        scratchCircle(scratchEvent, ctx, canvas, scratchedAreas);
-      });
-      
-      $canvas.on('touchmove', function(e) {
-        e.preventDefault();
-        if (isScratching) {
-          const touch = e.originalEvent.touches[0];
-          const rect = canvas.getBoundingClientRect();
-          const scratchEvent = {
-            offsetX: touch.clientX - rect.left,
-            offsetY: touch.clientY - rect.top
-          };
-          scratchCircle(scratchEvent, ctx, canvas, scratchedAreas);
-          
-          // Save progress continuously while scratching
-          saveScratchProgress(canvas, ctx, ticketNumber, circleId);
-        }
-      });
-      
-      $canvas.on('touchend', function(e) {
-        e.preventDefault();
-        isScratching = false;
-        ctx.globalCompositeOperation = 'source-over';
-        
-        // Save scratch progress for touch
-        saveScratchProgress(canvas, ctx, ticketNumber, circleId);
-        
-        // Check if all circles in this card are scratched
-        checkCardScratchCompletion($card, ticketNumber);
-      });
+        // Check completion for all circles
+        checkCardScratchCompletion(ticketNumber);
+      }
     });
   }
   
-  function checkCardScratchCompletion($card, ticketNumber) {
-    console.log('[Scratch] Checking completion for card:', ticketNumber);
+  function checkCircleScratchCompletion(canvas, ctx, ticketNumber, circleIndex) {
+    console.log('[Scratch] Checking circle completion:', circleIndex, 'for ticket:', ticketNumber);
     
-    const $circles = $card.find('.scratch-circle');
-    let fullyScratchedCircles = 0;
-    const totalCircles = $circles.length;
-    
-    $circles.each(function() {
-      const $circle = $(this);
-      const $canvas = $circle.find('.circle-canvas');
-      const canvas = $canvas[0];
-      const ctx = canvas.getContext('2d');
-      
-      // Get canvas data to check if mostly scratched
+    // Get image data to check scratch percentage
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
+    
       let transparentPixels = 0;
-      let totalPixels = data.length / 4;
-      
-      // Debug: Log first few pixels to understand the data
-      if (data.length > 0) {
-        console.log('[Scratch] First 4 pixels RGBA:', 
-          data[0], data[1], data[2], data[3], '|',
-          data[4], data[5], data[6], data[7], '|',
-          data[8], data[9], data[10], data[11], '|',
-          data[12], data[13], data[14], data[15]
-        );
-      }
+    const totalPixels = data.length / 4;
       
       for (let i = 3; i < data.length; i += 4) {
-        if (data[i] < 128) { // Alpha channel < 128 means mostly transparent
+      if (data[i] === 0) { // Alpha channel is 0 (transparent)
           transparentPixels++;
         }
       }
       
       const scratchPercentage = (transparentPixels / totalPixels) * 100;
-      console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%', 
-        '(transparent:', transparentPixels, 'total:', totalPixels, ')');
+    console.log('[Scratch] Circle scratch percentage:', scratchPercentage.toFixed(2) + '%');
+    
+    // If more than 30% is scratched, consider it complete (lowered from 50%)
+    if (scratchPercentage > 30) {
+      console.log('[Scratch] Circle completed:', circleIndex, 'with', scratchPercentage.toFixed(2) + '%');
       
-      if (scratchPercentage > 70) { // Consider scratched if > 70% transparent
-        fullyScratchedCircles++;
+      // Mark this circle as completed in the data structure
+      if (window.scratchCardsData && window.scratchCardsData[ticketNumber] && window.scratchCardsData[ticketNumber].circles[circleIndex]) {
+        window.scratchCardsData[ticketNumber].circles[circleIndex].completed = true;
+      }
+      
+      // Clear the entire canvas to reveal the result
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Save progress
+      saveScratchProgress(canvas, ctx, ticketNumber, circleIndex);
+      
+      // Check if all circles are completed
+      checkCardScratchCompletion(ticketNumber);
+    }
+  }
+  
+  function checkCardScratchCompletion(ticketNumber) {
+    console.log('[Scratch] Checking card completion for ticket:', ticketNumber);
+    
+    if (!window.scratchCardsData || !window.scratchCardsData[ticketNumber]) {
+      console.warn('[Scratch] No scratch data found for ticket:', ticketNumber);
+      return;
+    }
+    
+    const cardData = window.scratchCardsData[ticketNumber];
+    const totalCircles = cardData.circles.length;
+    let completedCircles = 0;
+    
+    // Check each circle
+    cardData.circles.forEach((circleData, index) => {
+      if (circleData && circleData.canvas) {
+        // Check if circle is marked as completed
+        if (circleData.completed) {
+          completedCircles++;
+          console.log('[Scratch] Circle', index, 'is marked as completed');
+        } else {
+          // Fallback: check canvas pixels for circles not yet marked
+          const ctx = circleData.ctx;
+          const imageData = ctx.getImageData(0, 0, circleData.canvas.width, circleData.canvas.height);
+          const data = imageData.data;
+          
+          let transparentPixels = 0;
+          for (let i = 3; i < data.length; i += 4) {
+            if (data[i] === 0) {
+              transparentPixels++;
+            }
+          }
+          
+          const scratchPercentage = (transparentPixels / (data.length / 4)) * 100;
+          if (scratchPercentage > 30) {
+            completedCircles++;
+            console.log('[Scratch] Circle', index, 'completed by pixel check:', scratchPercentage.toFixed(2) + '%');
+          }
+        }
       }
     });
     
-    console.log('[Scratch] Fully scratched circles:', fullyScratchedCircles, 'of', totalCircles);
+    console.log('[Scratch] Completed circles:', completedCircles, 'of', totalCircles);
     
-    // If all circles are scratched, reveal the card
-    if (fullyScratchedCircles >= totalCircles) {
-      console.log('[Scratch] All circles scratched! Revealing card:', ticketNumber);
+    // If all circles are completed, reveal the card
+    if (completedCircles >= totalCircles) {
+      console.log('[Scratch] All circles completed! Revealing card:', ticketNumber);
       
+      const $card = $(`.scratch-card-individual[data-ticket="${ticketNumber}"]`);
       const isWin = $card.find('.ticket-result-new').hasClass('win');
       
       // Get prize from win content or from ticket data
@@ -2541,9 +3011,28 @@ jQuery(document).ready(function($) {
       // Clear scratch progress for this card
       clearScratchProgress(ticketNumber);
       
-      // Show win notification if it's a win
+      // Show win notification and play win sound if it's a win
       if (isWin) {
         showAutoRevealWinNotification(prize);
+        
+        // Play win sound (same as auto-reveal button)
+        try {
+          if (gameSounds && gameSounds.winning) {
+            gameSounds.winning.play().then(() => {
+              console.log('[Scratch] Win sound played successfully for scratched card');
+            }).catch((error) => {
+              console.log('[Scratch] Error playing win sound:', error.message);
+              // Fallback to scratch sound if win sound fails
+              playScratchSound();
+            });
+          } else {
+            console.log('[Scratch] Win sound not available, using scratch sound');
+            playScratchSound();
+          }
+        } catch (error) {
+          console.log('[Scratch] Error with win sound:', error.message);
+          playScratchSound();
+        }
       }
       
       // Update auto-reveal button state
@@ -2551,6 +3040,75 @@ jQuery(document).ready(function($) {
       
       // Update remaining cards count
       updateRemainingCardsCount();
+      
+      // Check if this was the last ticket (all tickets revealed and all circles completed)
+      const totalCards = currentProduct.tickets.length;
+      const revealedCards = $('.scratch-card-individual.revealed');
+      const revealedTicketNumbers = revealedCards.map(function() {
+        return $(this).data('ticket');
+      }).get();
+      const uniqueRevealedTickets = [...new Set(revealedTicketNumbers)];
+      const revealedCount = uniqueRevealedTickets.length;
+      const remainingCards = totalCards - revealedCount;
+      
+      // Check if all circles of all tickets are completed
+      let allCirclesCompleted = true;
+      let totalCircles = 0;
+      let completedCircles = 0;
+      
+      if (window.scratchCardsData) {
+        Object.keys(window.scratchCardsData).forEach(ticketNumber => {
+          const ticketData = window.scratchCardsData[ticketNumber];
+          if (ticketData && ticketData.circles) {
+            totalCircles += ticketData.circles.length;
+            ticketData.circles.forEach(circleData => {
+              if (circleData && circleData.completed) {
+                completedCircles++;
+              }
+            });
+          }
+        });
+      }
+      
+      const isLastTicket = remainingCards === 0 && allCirclesCompleted;
+      
+      console.log('[Scratch] Final check after card completion - Tickets:', totalCards, 'Revealed:', revealedCount, 'Remaining:', remainingCards);
+      console.log('[Scratch] Final check after card completion - Circles:', totalCircles, 'Completed:', completedCircles, 'All completed:', allCirclesCompleted);
+      console.log('[Scratch] Final check after card completion - isLastTicket:', isLastTicket);
+      
+      // If this was the last ticket, automatically call instant reveal function
+      if (isLastTicket) {
+        console.log('[Scratch] Last ticket completed! Automatically calling instant reveal function...');
+        
+        // Show a message that instant reveal will be triggered
+        const autoRevealMsg = $(`
+          <div style="
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 10001;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+          ">
+            🎁 All tickets used! Showing final results...
+          </div>
+        `);
+        $('body').append(autoRevealMsg);
+        
+        setTimeout(() => {
+          autoRevealMsg.remove();
+          // Call instant reveal function directly instead of clicking button
+          callInstantRevealFunction();
+        }, 2000); // Wait 2 seconds after showing the result
+      }
+      
+      // Disable scratching for this card
+      disableScratchingForCard($card);
     }
   }
   
@@ -2588,6 +3146,7 @@ jQuery(document).ready(function($) {
   }
   
   function restoreScratchProgress(canvas, ctx, ticketNumber, circleId) {
+    
     try {
       const key = `scratch_progress_${ticketNumber}_${circleId}`;
       const savedData = localStorage.getItem(key);
@@ -2605,6 +3164,8 @@ jQuery(document).ready(function($) {
         img.src = savedData;
       } else {
         console.log('[Scratch] No saved progress found for ticket:', ticketNumber, 'circle:', circleId);
+        // Draw default gradient background
+        drawGradientBackground(ctx, canvas);
       }
     } catch (error) {
       console.error('[Scratch] Error restoring progress:', error);
@@ -2658,12 +3219,60 @@ jQuery(document).ready(function($) {
     }
   }
   
-  function scratchCircle(e, ctx, canvas, scratchedAreas) {
-    const rect = canvas.getBoundingClientRect();
-    const x = e.offsetX || (e.clientX - rect.left);
-    const y = e.offsetY || (e.clientY - rect.top);
+  function drawGradientBackground(ctx, canvas) {
+    // Draw gradient gray and silver background
+    const gradient = ctx.createRadialGradient(25, 25, 0, 25, 25, 25);
+    gradient.addColorStop(0, '#C0C0C0');   // Silver center
+    gradient.addColorStop(0.7, '#A0A0A0'); // Light gray
+    gradient.addColorStop(1, '#808080');   // Dark gray edge
     
-    // Create scratch effect with smaller brush for circles
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  
+  function scratchContainerAtPosition(e, $container, ticketNumber) {
+    // Get mouse/touch position relative to container
+    const rect = $container[0].getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+    
+    console.log('[Scratch] Container position:', x, y);
+    
+    // Find which circle is under the cursor/touch
+    const elementUnder = document.elementFromPoint(
+      e.clientX || e.touches[0].clientX, 
+      e.clientY || e.touches[0].clientY
+    );
+    
+    const $circle = $(elementUnder).closest('.scratch-circle');
+    if ($circle.length > 0) {
+      const circleIndex = parseInt($circle.data('circle'));
+      const canvas = $circle.find('.circle-canvas')[0];
+      const ctx = canvas.getContext('2d');
+      
+      if (canvas && ctx) {
+        // Get position relative to the specific circle canvas
+        const circleRect = canvas.getBoundingClientRect();
+        const circleX = (e.clientX || e.touches[0].clientX) - circleRect.left;
+        const circleY = (e.clientY || e.touches[0].clientY) - circleRect.top;
+        
+        console.log('[Scratch] Scratching circle:', circleIndex, 'at position:', circleX, circleY);
+        
+        // Scratch the circle at this position
+        scratchCircleAtPosition(circleX, circleY, ctx, canvas, window.scratchCardsData[ticketNumber].circles[circleIndex].scratchedAreas);
+        
+        // Auto-save progress after each scratch
+        autoSaveScratchProgress(canvas, ctx, ticketNumber, circleIndex);
+        
+        // Check if this circle is completed
+        console.log('[Scratch] Calling checkCircleScratchCompletion for circle:', circleIndex);
+        checkCircleScratchCompletion(canvas, ctx, ticketNumber, circleIndex);
+      }
+    }
+  }
+  
+  function scratchCircleAtPosition(x, y, ctx, canvas, scratchedAreas) {
+    // Create scratch effect
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
     ctx.arc(x, y, 15, 0, Math.PI * 2);
@@ -2671,6 +3280,137 @@ jQuery(document).ready(function($) {
     
     // Track scratched area
     scratchedAreas.push({ x: x, y: y, radius: 15 });
+  }
+  
+  function disableScratchingForCard($card) {
+    console.log('[Scratch] Disabling scratching for completed card');
+    
+    // Remove all scratch event listeners from container
+    const $container = $card.find('.scratch-card-container');
+    $container.off('mousedown touchstart mousemove touchmove mouseup touchend mouseleave');
+    
+    // Add a visual indicator that scratching is disabled
+    $container.addClass('scratching-disabled');
+    
+    // Optionally change cursor to indicate no more scratching
+    $container.css('cursor', 'default');
+    
+    console.log('[Scratch] Scratching disabled for card');
+  }
+  
+  function autoSaveScratchProgress(canvas, ctx, ticketNumber, circleIndex) {
+    try {
+      // Get canvas data as base64
+      const imageData = canvas.toDataURL();
+      
+      // Save to localStorage immediately
+      const key = `scratch_progress_${ticketNumber}_${circleIndex}`;
+      localStorage.setItem(key, imageData);
+      
+      console.log('[Auto-Save] Saved progress to localStorage for ticket:', ticketNumber, 'circle:', circleIndex);
+      
+    } catch (error) {
+      console.error('[Auto-Save] Error saving progress:', error);
+    }
+  }
+  
+  // Audio functionality for scratch sound
+  
+  function initScratchSound() {
+    if (scratchAudio || scratchAudioFailed) return;
+    
+    try {
+      const scratchUrl = instantWin.plugin_url + '/assets/sound/scratch-sound.mp3';
+      console.log('[Audio] Initializing scratch sound:', scratchUrl);
+      
+      // Create audio context if not exists
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('[Audio] Audio context created:', audioContext.state);
+      }
+      
+      scratchAudio = new Audio(scratchUrl);
+      scratchAudio.preload = 'auto';
+      scratchAudio.volume = 0.5;
+      
+      // Add event listeners
+      scratchAudio.addEventListener('canplaythrough', function() {
+        console.log('[Audio] Scratch sound loaded successfully');
+        scratchAudioLoaded = true;
+      });
+      
+      scratchAudio.addEventListener('error', function(e) {
+        console.log('[Audio] Scratch sound file not found, audio disabled');
+        scratchAudio = null;
+        scratchAudioFailed = true;
+      });
+      
+      // Force load the audio
+      scratchAudio.load();
+      
+    } catch (error) {
+      console.log('[Audio] Error initializing scratch sound:', error.message);
+      scratchAudioFailed = true;
+    }
+  }
+  
+  function playScratchSound() {
+    try {
+      // Initialize audio if not done yet
+      if (!scratchAudio && !scratchAudioFailed) {
+        initScratchSound();
+      }
+      
+      // Check if audio is ready to play
+      if (scratchAudio && scratchAudioLoaded && scratchAudio.readyState >= 2) {
+        // Reset audio to beginning and play
+        scratchAudio.currentTime = 0;
+        scratchAudio.play().then(() => {
+          console.log('[Audio] Scratch sound played successfully');
+        }).catch((error) => {
+          console.log('[Audio] Error playing scratch sound:', error.message);
+          // Try alternative method for autoplay restrictions
+          if (error.name === 'NotAllowedError') {
+            console.log('[Audio] Autoplay blocked, trying with user gesture...');
+            // This will be handled by the click event
+          }
+        });
+      } else if (scratchAudio && !scratchAudioLoaded) {
+        // Audio is still loading, try to play anyway (browser might allow it)
+        console.log('[Audio] Scratch sound still loading, attempting to play...');
+        scratchAudio.currentTime = 0;
+        scratchAudio.play().then(() => {
+          console.log('[Audio] Scratch sound played successfully (while loading)');
+        }).catch((error) => {
+          console.log('[Audio] Could not play scratch sound while loading:', error.message);
+          // Try to resume audio context if suspended
+          if (scratchAudio.context && scratchAudio.context.state === 'suspended') {
+            scratchAudio.context.resume().then(() => {
+              console.log('[Audio] Audio context resumed, trying to play again...');
+              scratchAudio.play().catch(e => {
+                console.log('[Audio] Still cannot play after context resume:', e.message);
+              });
+            });
+          }
+        });
+      } else if (scratchAudioFailed) {
+        console.log('[Audio] Scratch sound not available (failed to load)');
+      } else {
+        console.log('[Audio] Scratch sound not ready');
+      }
+      
+    } catch (error) {
+      console.log('[Audio] Error with scratch sound:', error.message);
+    }
+  }
+  
+  function scratchCircle(e, ctx, canvas, scratchedAreas) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.offsetX || (e.clientX - rect.left);
+    const y = e.offsetY || (e.clientY - rect.top);
+    
+    // Use the new scratch function
+    scratchCircleAtPosition(x, y, ctx, canvas, scratchedAreas);
   }
   
   function revealAllScratchCards() {
@@ -2689,7 +3429,7 @@ jQuery(document).ready(function($) {
   }
   
   function saveScratchSliderProgress() {
-    console.log('[Scratch] Saving scratch slider progress');
+    console.log('[Scratch] Saving scratch slider progress to localStorage');
     
     if (!window.scratchCardsData) {
       console.log('[Scratch] No scratch cards data available');
@@ -2710,47 +3450,24 @@ jQuery(document).ready(function($) {
       };
     });
     
-    // Save to server via AJAX
-    $.ajax({
-      url: instantWin.ajax_url,
-      type: 'POST',
-      data: {
-        action: 'instantwin_save_scratch_progress',
-        nonce: instantWin.nonce,
-        order_id: instantWin.order_id,
-        product_id: currentProduct.product_id,
-        scratch_progress: JSON.stringify(progressData)
-      },
-      success: function(response) {
-        if (response.success) {
-          console.log('[Scratch] Slider progress saved successfully');
+    // Save to localStorage instead of server
+    try {
+      localStorage.setItem('scratch_slider_progress', JSON.stringify(progressData));
+      console.log('[Scratch] Slider progress saved to localStorage successfully');
           showProgressSavedNotification();
-        } else {
-          console.error('[Scratch] Server error saving progress:', response.data);
+    } catch (error) {
+      console.error('[Scratch] Error saving progress to localStorage:', error);
         }
-      },
-      error: function(xhr, status, error) {
-        console.error('[Scratch] AJAX error saving progress:', error);
-      }
-    });
   }
   
   function loadScratchSliderProgress() {
-    console.log('[Scratch] Loading scratch slider progress');
+    console.log('[Scratch] Loading scratch slider progress from localStorage');
     
-    $.ajax({
-      url: instantWin.ajax_url,
-      type: 'POST',
-      data: {
-        action: 'instantwin_load_scratch_progress',
-        nonce: instantWin.nonce,
-        order_id: instantWin.order_id,
-        product_id: currentProduct.product_id
-      },
-      success: function(response) {
-        if (response.success && response.data && response.data.scratch_progress) {
-          try {
-            const progressData = JSON.parse(response.data.scratch_progress);
+    try {
+      const savedProgress = localStorage.getItem('scratch_slider_progress');
+      
+      if (savedProgress) {
+        const progressData = JSON.parse(savedProgress);
             
             if (progressData.cardsData) {
               console.log('[Scratch] Restoring scratch progress for', Object.keys(progressData.cardsData).length, 'cards');
@@ -2784,15 +3501,12 @@ jQuery(document).ready(function($) {
                 }
               });
             }
-          } catch (e) {
-            console.error('[Scratch] Error parsing progress data:', e);
+      } else {
+        console.log('[Scratch] No saved progress found in localStorage');
           }
+    } catch (error) {
+      console.error('[Scratch] Error loading progress from localStorage:', error);
         }
-      },
-      error: function(xhr, status, error) {
-        console.error('[Scratch] AJAX error loading progress:', error);
-      }
-    });
   }
   
   function showProgressSavedNotification() {
@@ -3233,8 +3947,40 @@ jQuery(document).ready(function($) {
   function showScratchResult(isWin, prize) {
     console.log('[Scratch] Showing result - Win:', isWin, 'Prize:', prize);
     
-    // Check if this is the final scratch (no more tickets)
-    const isLastTicket = currentProduct.tickets.length === 0;
+    // Check if this is the final scratch (all circles of all tickets completed)
+    const totalCards = currentProduct.tickets.length;
+    const revealedCards = $('.scratch-card-individual.revealed');
+    const revealedTicketNumbers = revealedCards.map(function() {
+      return $(this).data('ticket');
+    }).get();
+    const uniqueRevealedTickets = [...new Set(revealedTicketNumbers)];
+    const revealedCount = uniqueRevealedTickets.length;
+    const remainingCards = totalCards - revealedCount;
+    
+    // Check if all circles of all tickets are completed
+    let allCirclesCompleted = true;
+    let totalCircles = 0;
+    let completedCircles = 0;
+    
+    if (window.scratchCardsData) {
+      Object.keys(window.scratchCardsData).forEach(ticketNumber => {
+        const ticketData = window.scratchCardsData[ticketNumber];
+        if (ticketData && ticketData.circles) {
+          totalCircles += ticketData.circles.length;
+          ticketData.circles.forEach(circleData => {
+            if (circleData && circleData.completed) {
+              completedCircles++;
+            }
+          });
+        }
+      });
+    }
+    
+    const isLastTicket = remainingCards === 0 && allCirclesCompleted;
+    
+    console.log('[Scratch] Ticket status - Total:', totalCards, 'Revealed:', revealedCount, 'Remaining:', remainingCards);
+    console.log('[Scratch] Circle status - Total:', totalCircles, 'Completed:', completedCircles, 'All completed:', allCirclesCompleted);
+    console.log('[Scratch] Final check - isLastTicket:', isLastTicket);
     
     // If this was the last ticket, automatically call instant reveal function
     if (isLastTicket) {
@@ -3325,14 +4071,15 @@ jQuery(document).ready(function($) {
   
   function populateSlotsReels() {
     console.log('[Slots] Populating reels with symbols');
-    console.log('[Slots] Available prizes:', allPrizes);
+    console.log('[Slots] Current product prizes:', currentProduct.prizes);
     
     // Get all available symbols (prize images + losing symbols)
     const symbols = [];
     
-    // Add prize symbols (from d_prize_image)
-    if (allPrizes && allPrizes.length > 0) {
-      allPrizes.forEach(prize => {
+    // Add prize symbols (from current product prizes)
+    const productPrizes = currentProduct.prizes || [];
+    if (productPrizes && productPrizes.length > 0) {
+      productPrizes.forEach(prize => {
         // Handle both old format (string) and new format (object with name/image)
         if (typeof prize === 'string') {
           // Old format - just prize name
@@ -3417,17 +4164,12 @@ jQuery(document).ready(function($) {
     // Reset spinning flag at the start of each spin
     window.slotsSpinningStarted = false;
     
-    // Play spinning sound (only once per spin)
-    if (!window.slotsSpinningStarted) {
+    // Play spinning sound right before starting animation
     gameSounds.playSpinning();
       window.slotsSpinningStarted = true;
       
-      // Stop spinning sound after max duration (longest animation is 1800ms + buffer)
-      setTimeout(() => {
-        gameSounds.stopSpinning();
-        window.slotsSpinningStarted = false;
-      }, 3000); // Stop after 3 seconds to cover full animation
-    }
+    // Get product prizes data
+    const productPrizes = currentProduct.prizes || [];
     
     // Determine target symbols for each reel
     let targetSymbols = [];
@@ -3435,11 +4177,11 @@ jQuery(document).ready(function($) {
     if (isWin && prize && prize.trim() !== '') {
       // Find the prize symbol
       let prizeSymbol = null;
-      if (allPrizes && allPrizes.length > 0) {
+      if (productPrizes && productPrizes.length > 0) {
         console.log('[Slots] Looking for prize:', prize);
-        console.log('[Slots] Available prizes:', allPrizes);
+        console.log('[Slots] Current product prizes:', productPrizes);
         
-        prizeSymbol = allPrizes.find(p => {
+        prizeSymbol = productPrizes.find(p => {
           // Handle both old format (string) and new format (object)
           if (typeof p === 'string') {
             const match = p === prize;
@@ -3474,8 +4216,8 @@ jQuery(document).ready(function($) {
           console.log('[Slots] Win condition - all 3 reels will show same prize:', prize, 'as text');
         }
       } else {
-        // Fallback: Create a prize symbol from the prize name if not found in allPrizes
-        console.log('[Slots] Prize not found in allPrizes, creating fallback symbol for:', prize);
+        // Fallback: Create a prize symbol from the prize name if not found in product prizes
+        console.log('[Slots] Prize not found in product prizes, creating fallback symbol for:', prize);
         
         // Decode the prize text to fix encoding issues
         let decodedPrize = prize;
@@ -3497,7 +4239,7 @@ jQuery(document).ready(function($) {
         
         // Try to find a matching prize by partial name match
         let bestMatch = null;
-        if (allPrizes && allPrizes.length > 0) {
+        if (productPrizes && productPrizes.length > 0) {
           // First, decode the prize name to get the actual text
           let decodedPrizeName = prize;
           try {
@@ -3508,7 +4250,7 @@ jQuery(document).ready(function($) {
           
           console.log('[Slots] Looking for match with decoded prize name:', decodedPrizeName);
           
-          bestMatch = allPrizes.find(p => {
+          bestMatch = productPrizes.find(p => {
             if (typeof p === 'string') {
               // Extract key words from both strings for comparison
               const prizeWords = decodedPrizeName.toLowerCase().split(' ').filter(word => word.length > 2);
@@ -3555,7 +4297,7 @@ jQuery(document).ready(function($) {
       }
     } else {
       // Losing combination - show different non-aligned prize symbols (not X)
-      const availablePrizeSymbols = allPrizes.filter(prize => {
+      const availablePrizeSymbols = productPrizes.filter(prize => {
         if (typeof prize === 'object' && prize.image && prize.image.trim() !== '') {
           return true;
         }
@@ -3663,6 +4405,10 @@ jQuery(document).ready(function($) {
             
             completedReels++;
             if (completedReels === 3) {
+              // Stop spinning sound exactly when all reels finish
+              gameSounds.stopSpinning();
+              window.slotsSpinningStarted = false;
+              
               // All reels stopped - add flashing effect to slots-reels container for wins
               if (isWin) {
                 $('.slots-reels').addClass('winning-symbol-flash');
@@ -3689,9 +4435,6 @@ jQuery(document).ready(function($) {
   
   function showSlotsResult(isWin, prize) {
     console.log('[Slots] Showing result - Win:', isWin, 'Prize:', prize);
-    
-    // Stop spinning sound
-    gameSounds.stopSpinning();
     
     // Re-enable spin button
     $('#instantwin-play-btn').prop('disabled', false).text('Spin');
@@ -3799,9 +4542,6 @@ jQuery(document).ready(function($) {
   function startWheelSpin(targetPrize, ticketUsed, serverResponse) {
     console.log('[Game] Starting wheel spin with target:', targetPrize);
     
-    // Play spinning sound
-    gameSounds.playSpinning();
-    
     if (!wheelInstance) {
       console.error('[Game] No wheel instance found');
       $('#instantwin-play-btn').prop('disabled', false).text('Spin the Wheel!');
@@ -3818,11 +4558,44 @@ jQuery(document).ready(function($) {
     // Find target segment (1-based indexing)
     let targetSegmentNumber = -1;
     if (wheelInstance.segments && wheelInstance.numSegments > 0) {
+      // Decode Unicode escape sequences in targetPrize
+      let decodedTargetPrize = targetPrize;
+      if (targetPrize && (targetPrize.includes('ud83c') || targetPrize.includes('u00a3') || targetPrize.includes('ud83e'))) {
+        try {
+          decodedTargetPrize = targetPrize.replace(/ud83cudf1f/gi, '⭐')  // Star emoji
+                                         .replace(/ud83eudea8/gi, '🪨')  // Rock emoji
+                                         .replace(/ud83cudf4d/gi, '🍍')  // Pineapple emoji
+                                         .replace(/ud83eudd65/gi, '🥥')  // Coconut emoji
+                                         .replace(/ud83cudf05/gi, '🌅')  // Sunset emoji
+                                         .replace(/ud83fudfbf/gi, '🗿')  // Tiki emoji
+                                         .replace(/ud83cudf1a/gi, '🐚')  // Shell emoji
+                                         .replace(/u2753/gi, '❓')      // Question mark emoji
+                                         .replace(/u00a3/gi, '£');      // Pound symbol
+          console.log('[Game] Decoded target prize from:', targetPrize, 'to:', decodedTargetPrize);
+        } catch (e) {
+          console.log('[Game] Could not decode target prize, using original:', targetPrize);
+        }
+      }
+      
       for (let segmentNum = 1; segmentNum <= wheelInstance.numSegments; segmentNum++) {
-        if (wheelInstance.segments[segmentNum] && wheelInstance.segments[segmentNum].text === targetPrize) {
+        if (wheelInstance.segments[segmentNum]) {
+          const segmentText = wheelInstance.segments[segmentNum].text;
+          // Try exact match first
+          if (segmentText === targetPrize || segmentText === decodedTargetPrize) {
           targetSegmentNumber = segmentNum;
           console.log('[Game] Found target segment:', segmentNum, 'for prize:', targetPrize);
           break;
+          }
+          // Try partial match for monetary values
+          if (decodedTargetPrize.includes('£') && segmentText.includes('£')) {
+            const targetMatch = decodedTargetPrize.match(/£[\d,]+/);
+            const segmentMatch = segmentText.match(/£[\d,]+/);
+            if (targetMatch && segmentMatch && targetMatch[0] === segmentMatch[0]) {
+              targetSegmentNumber = segmentNum;
+              console.log('[Game] Found target segment by monetary value:', segmentNum, 'for prize:', targetPrize);
+              break;
+            }
+          }
         }
       }
     }
@@ -3843,8 +4616,8 @@ jQuery(document).ready(function($) {
     wheelInstance.animation.callbackFinished = function(indicatedSegment) {
       console.log('[Game] Animation finished - landed on:', indicatedSegment.text);
       
-      // Stop spinning sound
-      gameSounds.stopSpinning();
+      // Stop wheel spinning sound exactly when animation finishes
+      gameSounds.stopWheelSpinning();
       
       // Update play history
       const lastPlay = playHistory[playHistory.length - 1];
@@ -3861,6 +4634,9 @@ jQuery(document).ready(function($) {
       saveGameState();
       showResultModal(indicatedSegment.text !== 'X', indicatedSegment.text);
     };
+    
+    // Play wheel spinning sound right before starting animation (no loop for wheel - single play)
+    gameSounds.playWheelSpinning(false);
     
     // Start animation
     wheelInstance.startAnimation();
@@ -4035,11 +4811,14 @@ jQuery(document).ready(function($) {
     // Add loading animation to the entire game canvas
     $('#instantwin-game-canvas').addClass('processing-loading');
     
-    // Update global revealed products list
+    // Update global revealed products list and define all variables at function level
     let isRevealAll = false; // Define outside the if block for scope
+    let revealedProducts = [];
+    let totalProducts = 0;
+    let allProductsRevealed = false;
     
     if (response.data && response.data.revealed_products) {
-      let revealedProducts = response.data.revealed_products;
+      revealedProducts = response.data.revealed_products;
       
       // Ensure it's always an array (handle object case from PHP)
       if (typeof revealedProducts === 'object' && !Array.isArray(revealedProducts)) {
@@ -4050,20 +4829,48 @@ jQuery(document).ready(function($) {
       window.lastRevealedProducts = revealedProducts;
       console.log('[InstantWin] Updated revealed products:', window.lastRevealedProducts);
       
-      // Check if this was a "reveal all" (multiple products revealed)
-      isRevealAll = window.lastRevealedProducts.length > 1 || 
-                   (products && window.lastRevealedProducts.length === products.length);
-      console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', products ? products.length : 'undefined');
+      // Check if this was a "reveal all" from lobby (ALL products revealed in one action)
+      // OR if all products are now revealed after individual reveals
+      isRevealAll = response.data && response.data.is_reveal_all === true;
+      
+      // Check if ALL products are now revealed after this individual reveal
+      totalProducts = products ? products.length : 0;
+      allProductsRevealed = totalProducts > 0 && window.lastRevealedProducts.length === totalProducts;
+      
+      console.log('[InstantWin] Is reveal all?', isRevealAll, '- Revealed:', window.lastRevealedProducts.length, 'Total:', totalProducts);
+      console.log('[InstantWin] Server response is_reveal_all:', response.data ? response.data.is_reveal_all : 'undefined');
+      console.log('[InstantWin] All products revealed?', allProductsRevealed);
+      console.log('[InstantWin] Products array:', products ? products.map(p => p.product_id) : 'undefined');
+      console.log('[InstantWin] Revealed products:', window.lastRevealedProducts);
+      console.log('[InstantWin] Comparison: revealed.length === totalProducts:', window.lastRevealedProducts.length, '===', totalProducts, '=', window.lastRevealedProducts.length === totalProducts);
       
       if (isRevealAll) {
         // Update lobby to show all games as completed
-        console.log('[InstantWin] Reveal all detected - updating lobby and disabling button');
+        console.log('[InstantWin] Reveal all detected - updating lobby and changing button to View Results');
         showGameLobby(); // Refresh lobby with updated revealed status
         
         // Change button to "View Results" so users can reopen popup
         $('.instant-reveal-trigger').prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
-        console.log('[InstantWin] Button changed to "View Results" for reopening popup');
+        console.log('[InstantWin] Button changed to "View Results" for reveal all');
+      } else if (allProductsRevealed) {
+        // Individual reveals: only change button to "View Results" if ALL products are revealed
+        console.log('[InstantWin] All products now revealed - changing button to "View Results"');
+        
+        // Find and update the button
+        const $button = $('.instant-reveal-trigger');
+        console.log('[InstantWin] Found button:', $button.length, 'buttons');
+        
+        if ($button.length > 0) {
+          $button.prop('disabled', false).text('View Results').removeClass('completed-btn').addClass('view-results-btn');
+          console.log('[InstantWin] Button updated successfully. Current text:', $button.text());
+          console.log('[InstantWin] Button classes:', $button.attr('class'));
+        } else {
+          console.error('[InstantWin] No instant-reveal-trigger button found!');
+        }
       }
+      
+      // Note: Individual reveals don't trigger lobby refresh or button change
+      // Only "reveal all" from lobby would do that
     }
     
     // Get wins data (can be empty array for no wins)
@@ -4080,7 +4887,51 @@ jQuery(document).ready(function($) {
       }));
     }
     
-    // Note: Final results are now saved to order meta for "View Results" functionality
+    // Store wins data globally for View Results functionality
+    // Accumulate wins from all games instead of overwriting
+    if (!window.lastWinsData) {
+      window.lastWinsData = [];
+    }
+    
+    // Append new wins to existing wins (don't overwrite)
+    if (winsData && Array.isArray(winsData) && winsData.length > 0) {
+      window.lastWinsData = window.lastWinsData.concat(winsData);
+      console.log('[InstantWin] Appended new wins to global wins data. Total wins now:', window.lastWinsData.length);
+    }
+    
+    console.log('[InstantWin] Current global wins data for View Results:', window.lastWinsData);
+    
+    // IMPORTANT: Save results to server order meta for View Results functionality
+    // This ensures data persists after page reload for both reveal all and individual reveals
+    // TODO: Implement server-side action 'instantwin_save_individual_results' to enable this functionality
+    if (winsData && Array.isArray(winsData) && winsData.length > 0) {
+      console.log('[InstantWin] TODO: Individual game results should be saved to server order meta');
+      console.log('[InstantWin] Need to implement server action: instantwin_save_individual_results');
+      console.log('[InstantWin] For now, results are only stored locally in window.lastWinsData');
+      
+      // TODO: Uncomment when server action is implemented
+      /*
+      $.post(instantWin.ajax_url, {
+        action: 'instantwin_save_individual_results',
+        order_id: instantWin.order_id,
+        product_id: currentProductIdx !== undefined && products[currentProductIdx] ? products[currentProductIdx].product_id : null,
+        wins_data: winsData,
+        nonce: instantWin.nonce
+      })
+      .done(function(saveRes) {
+        console.log('[InstantWin] Individual results save response:', saveRes);
+        if (saveRes && saveRes.success) {
+          console.log('[InstantWin] Individual game results saved to server successfully');
+        } else {
+          console.error('[InstantWin] Failed to save individual results to server:', saveRes);
+        }
+      })
+      .fail(function(xhr, status, err) {
+        console.error('[InstantWin] Error saving individual results to server:', status, err);
+      });
+      */
+    }
+    
     console.log('[InstantWin] Final results saved to order meta for View Results popup');
     
     console.log('[InstantWin] Wins data for popup:', winsData);
@@ -4093,12 +4944,14 @@ jQuery(document).ready(function($) {
       $('#instantwin-game-canvas').removeClass('processing-loading');
     }, 500);
     
-    // Only re-enable button if it wasn't a reveal all (to preserve disabled state)
-    if (!isRevealAll) {
+    // Only re-enable button if it wasn't a reveal all AND not all products revealed
+    if (!isRevealAll && !allProductsRevealed) {
       $('.instant-reveal-trigger').prop('disabled', false).text('Instant Reveal');
-      console.log('[InstantWin] Button re-enabled for individual reveal');
-    } else {
+      console.log('[InstantWin] Button re-enabled for individual reveal (not all products revealed yet)');
+    } else if (isRevealAll) {
       console.log('[InstantWin] Button remains disabled for reveal all');
+    } else if (allProductsRevealed) {
+      console.log('[InstantWin] Button remains as View Results (all products revealed)');
     }
   }
   
@@ -4279,11 +5132,15 @@ jQuery(document).ready(function($) {
               $card.find('.circle-canvas').off('mousedown mousemove mouseup mouseleave');
             });
             
-            // Update auto-reveal button state
+            // Update auto-reveal button state (only if currentProduct exists)
+            if (currentProduct && currentProduct.tickets) {
             updateAutoRevealButtonState();
+            }
             
-            // Update remaining cards count after reset
+            // Update remaining cards count after reset (only if currentProduct exists)
+            if (currentProduct && currentProduct.tickets) {
             updateRemainingCardsCount();
+            }
             
             // Reload the page to show fresh game state
             console.log('[Test] Refreshing page to show fresh game state...');
@@ -4568,6 +5425,9 @@ jQuery(document).ready(function($) {
       console.log('[InstantWin] reveal all response:', res);
       if (res && res.success) {
         // Process the reveal results and show appropriate messages
+        // Mark this as a "reveal all" operation
+        res.data = res.data || {};
+        res.data.is_reveal_all = true;
         processInstantRevealResults(res);
       } else {
         const msg = res && res.data && res.data.msg
