@@ -4706,10 +4706,18 @@ jQuery(document).ready(function($) {
     
     $('#instantwin-play-btn').text('Spinning...');
     
-    // Reset wheel state
+    // Stop any existing animation and reset to starting position
     wheelInstance.stopAnimation(false);
     wheelInstance.rotationAngle = 0;
+    console.log('[Wheel] 🎡 Reset rotation angle to 0 for consistent spin');
+    
+    // Redraw wheel at position 0
     wheelInstance.draw();
+    
+    // Add a small delay to ensure smooth transition
+    setTimeout(() => {
+      console.log('[Wheel] 🎡 Starting smooth spin from position 0');
+    }, 50);
     
     // Find target segment (1-based indexing)
     let targetSegmentNumber = -1;
