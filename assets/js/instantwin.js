@@ -170,9 +170,11 @@ jQuery(document).ready(function($) {
             console.log('[Sounds] 🎵 Set currentTime to 0 and loop=' + enableLoop + ', attempting to play wheel spinning...');
             
             this.wheelSpinning.play().then(() => {
+              const actualPlayTime = Date.now();
               console.log('[Sounds] 🎵 ✅ Wheel spinning sound started playing successfully with loop=' + enableLoop);
               console.log('[Sounds] 🎵 Audio duration:', this.wheelSpinning.duration, 'seconds');
               console.log('[Sounds] 🎵 Audio currentTime:', this.wheelSpinning.currentTime, 'seconds');
+              console.log('[Sounds] 🎵 Actual play time:', actualPlayTime);
             }).catch(e => {
               console.warn('[Sounds] 🎵 ❌ Could not play wheel spinning sound:', e);
               console.warn('[Sounds] 🎵 ❌ Error details:', e.message);
@@ -401,12 +403,12 @@ jQuery(document).ready(function($) {
           console.log('[Game] Debug - Calling instantwin_get_final_results with order_id:', instantWin.order_id);
           
           // Load final results from order meta (fallback for reveal all scenarios)
-          $.post(instantWin.ajax_url, {
-            action: 'instantwin_get_final_results',
-            order_id: instantWin.order_id,
-            nonce: instantWin.nonce
-          })
-          .done(function(res) {
+        $.post(instantWin.ajax_url, {
+          action: 'instantwin_get_final_results',
+          order_id: instantWin.order_id,
+          nonce: instantWin.nonce
+        })
+        .done(function(res) {
             console.log('[Game] ===== VIEW RESULTS SERVER RESPONSE =====');
             console.log('[Game] Raw server response:', res);
             console.log('[Game] Response success:', res && res.success);
@@ -416,45 +418,45 @@ jQuery(document).ready(function($) {
             console.log('[Game] Final results length:', res && res.data && res.data.final_results ? res.data.final_results.length : 'N/A');
             console.log('[Game] ===========================================');
             
-            if (res && res.success && res.data && res.data.final_results !== undefined) {
-              // Format the final results for the popup
-              const finalResults = res.data.final_results;
-              let winsData = [];
-              
-              // Always process finalResults, even if empty (empty means all loses)
-              if (finalResults && Array.isArray(finalResults)) {
-                winsData = finalResults.map(win => ({
-                  name: win.product_name || 'Unknown Product',
-                  prizes: [{
-                    name: win.prize_name || 'Unknown Prize',
-                    ticket: win.ticket_number || 'Unknown'
-                  }]
-                }));
-              }
-              // Note: If finalResults is empty array, it means all games were loses
-              // showWinPopup will handle empty winsData correctly by showing lose popup
-              
+          if (res && res.success && res.data && res.data.final_results !== undefined) {
+            // Format the final results for the popup
+            const finalResults = res.data.final_results;
+            let winsData = [];
+            
+            // Always process finalResults, even if empty (empty means all loses)
+            if (finalResults && Array.isArray(finalResults)) {
+              winsData = finalResults.map(win => ({
+                name: win.product_name || 'Unknown Product',
+                prizes: [{
+                  name: win.prize_name || 'Unknown Prize',
+                  ticket: win.ticket_number || 'Unknown'
+                }]
+              }));
+            }
+            // Note: If finalResults is empty array, it means all games were loses
+            // showWinPopup will handle empty winsData correctly by showing lose popup
+            
               console.log('[Game] Processed winsData for popup:', winsData);
               console.log('[Game] Showing View Results popup with server data:', winsData);
-              showWinPopup(winsData);
-            } else {
-              console.log('[Game] No final results found, showing lose popup');
+            showWinPopup(winsData);
+          } else {
+            console.log('[Game] No final results found, showing lose popup');
               console.log('[Game] Debug - Response structure:', {
                 hasRes: !!res,
                 hasSuccess: !!(res && res.success),
                 hasData: !!(res && res.data),
                 hasFinalResults: !!(res && res.data && res.data.final_results !== undefined)
               });
-              // Fallback if no results found - show lose popup
-              showWinPopup([]);
-            }
-          })
-          .fail(function(xhr, status, err) {
-            console.error('[Game] Error loading final results:', status, err);
-            console.error('[Game] XHR response:', xhr.responseText);
-            // Fallback on error - show lose popup
+            // Fallback if no results found - show lose popup
             showWinPopup([]);
-          });
+          }
+        })
+        .fail(function(xhr, status, err) {
+          console.error('[Game] Error loading final results:', status, err);
+            console.error('[Game] XHR response:', xhr.responseText);
+          // Fallback on error - show lose popup
+          showWinPopup([]);
+        });
         }
         
         return;
@@ -1300,6 +1302,11 @@ jQuery(document).ready(function($) {
     soundTestBtn.click(() => testWheelSound());
     buttonsRow.append(soundTestBtn);
     
+    // Add Test Wheel Spin button
+    const spinTestBtn = $('<button class="test-btn" style="padding:8px 12px;font-size:12px;border:1px solid #17a2b8;background:#17a2b8;color:white;border-radius:4px;cursor:pointer;">🎡 Test Wheel Spin</button>');
+    spinTestBtn.click(() => testWheelSpin());
+    buttonsRow.append(spinTestBtn);
+    
     testContainer.append(buttonsRow);
     $('#instantwin-game-canvas').append(testContainer);
   }
@@ -1315,6 +1322,61 @@ jQuery(document).ready(function($) {
     gameSounds.playWheelSpinning(false);
     
     console.log('[Test] 🎵 Wheel sound played!');
+  }
+  
+  function testWheelSpin() {
+    console.log('[Test] 🎡 Testing wheel spin...');
+    
+    if (!wheelInstance) {
+      console.error('[Test] 🎡 No wheel instance found');
+      return;
+    }
+    
+    // Reset gameActive flag for testing
+    window.gameActive = false;
+    console.log('[Test] 🎡 Reset gameActive flag for testing');
+    
+    // Set random target for testing
+    const testTarget = 'X'; // Always test with X (lose)
+    console.log('[Test] 🎡 Test target:', testTarget);
+    
+    // Find target segment
+    let targetSegmentNumber = -1;
+    if (wheelInstance.segments && wheelInstance.numSegments > 0) {
+      for (let segmentNum = 1; segmentNum <= wheelInstance.numSegments; segmentNum++) {
+        if (wheelInstance.segments[segmentNum] && wheelInstance.segments[segmentNum].text === testTarget) {
+          targetSegmentNumber = segmentNum;
+          console.log('[Test] 🎡 Found target segment:', segmentNum, 'for prize:', testTarget);
+          break;
+        }
+      }
+    }
+    
+    if (targetSegmentNumber === -1) {
+      console.error('[Test] 🎡 Could not find segment for prize:', testTarget);
+      return;
+    }
+    
+    // Calculate stop angle
+    const randomForSegment = wheelInstance.getRandomForSegment(targetSegmentNumber);
+    wheelInstance.animation.stopAngle = randomForSegment;
+    console.log('[Test] 🎡 Set stopAngle to:', wheelInstance.animation.stopAngle);
+    
+    // Set animation callback for testing
+    wheelInstance.animation.callbackFinished = function(indicatedSegment) {
+      console.log('[Test] 🎡 Animation finished - landed on:', indicatedSegment.text);
+      console.log('[Test] 🎡 Animation duration was:', this.duration, 'seconds');
+      
+      // Stop wheel spinning sound when animation finishes
+      gameSounds.stopWheelSpinning();
+      console.log('[Test] 🎡 Sound stopped by animation callback');
+    };
+    
+    // Test the same logic as real spin
+    console.log('[Test] 🎡 Starting test spin...');
+    startWheelSpin(testTarget, {number: 'TEST'}, {success: true});
+    
+    console.log('[Test] 🎡 Test spin started!');
   }
   
   function testWheelResult(targetPrize) {
@@ -4735,14 +4797,49 @@ jQuery(document).ready(function($) {
     console.log('[Wheel] 🎵 Preparing wheel spinning sound for immediate playback...');
     gameSounds.prepareWheelSpinning();
     
-    // Play sound immediately when ready
-    console.log('[Wheel] 🎵 Playing wheel spinning sound...');
-    gameSounds.playWheelSpinning(false);
-    
-    // Start animation
-    console.log('[Wheel] 🎡 Starting wheel animation...');
+    // Get sound duration and sync animation
+    gameSounds.getWheelSoundDuration().then(soundDuration => {
+      console.log('[Wheel] 🎵 Sound duration:', soundDuration, 'seconds');
+      
+      // Use full sound duration (13+ seconds)
+      let finalDuration = soundDuration;
+      console.log('[Wheel] 🎵 Using full sound duration:', finalDuration, 'seconds');
+      
+      // Update wheel animation duration to match sound
+      wheelInstance.animation.duration = finalDuration;
+      console.log('[Wheel] 🎡 Animation duration set to:', finalDuration, 'seconds');
+      
+            // Play sound 1 second BEFORE animation starts
+      const soundStartTime = Date.now();
+      console.log('[Wheel] 🎵 Playing wheel spinning sound at:', soundStartTime);
+      gameSounds.playWheelSpinning(false);
+      
+      // Wait 1 second before starting animation
+      setTimeout(() => {
+        const animationStartTime = Date.now();
+        console.log('[Wheel] 🎡 Starting wheel animation at:', animationStartTime);
+        console.log('[Wheel] ⏱️ Time difference (animation - sound):', animationStartTime - soundStartTime, 'ms');
     wheelInstance.startAnimation();
-    console.log('[Wheel] 🎡 Wheel animation started');
+        console.log('[Wheel] 🎡 Wheel animation started with duration:', finalDuration, 'seconds');
+      }, 1000); // 1 second delay
+      
+    }).catch(error => {
+      console.warn('[Wheel] 🎵 Could not get sound duration, using default:', error);
+      
+      // Fallback: use default duration with 1 second delay
+      const soundStartTime = Date.now();
+      console.log('[Wheel] 🎵 Playing wheel spinning sound at:', soundStartTime);
+      gameSounds.playWheelSpinning(false);
+      
+      // Wait 1 second before starting animation
+      setTimeout(() => {
+        const animationStartTime = Date.now();
+        console.log('[Wheel] 🎡 Starting wheel animation at:', animationStartTime);
+        console.log('[Wheel] ⏱️ Time difference (animation - sound):', animationStartTime - soundStartTime, 'ms');
+        wheelInstance.startAnimation();
+        console.log('[Wheel] 🎡 Wheel animation started with default duration');
+      }, 1000); // 1 second delay
+    });
     
     // Note: Sound will be stopped by callbackFinished when animation ends
   }
