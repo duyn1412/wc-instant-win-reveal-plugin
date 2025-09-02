@@ -145,52 +145,124 @@ jQuery(document).ready(function($) {
     },
     
     playWheelSpinning: function(enableLoop = false) {
-      console.log('[Sounds] Attempting to play wheel spinning sound...');
+      console.log('[Sounds] 🎵 Attempting to play wheel spinning sound...');
+      console.log('[Sounds] 🎵 Function called with enableLoop =', enableLoop);
+      
       // Enable sounds if not already enabled (user interaction from clicking play button)
       if (!soundsEnabled) {
-        console.log('[Sounds] Enabling sounds due to play button interaction...');
+        console.log('[Sounds] 🎵 Enabling sounds due to play button interaction...');
         soundsEnabled = true;
       }
+      
       if (this.wheelSpinning) {
-        console.log('[Sounds] Wheel spinning audio object found:', this.wheelSpinning);
+        console.log('[Sounds] 🎵 Wheel spinning audio object found:', this.wheelSpinning);
+        console.log('[Sounds] 🎵 Audio state - paused:', this.wheelSpinning.paused, 'ended:', this.wheelSpinning.ended, 'gameActive:', window.gameActive);
+        
         try {
           // Only play if not already playing and no other game is active
           if ((this.wheelSpinning.paused || this.wheelSpinning.ended) && !window.gameActive) {
             window.gameActive = true; // Set global flag
+            console.log('[Sounds] 🎵 Setting gameActive = true, preparing to play...');
+            
             // Set loop based on parameter
             this.wheelSpinning.loop = enableLoop;
             this.wheelSpinning.currentTime = 0;
-            console.log('[Sounds] Set currentTime to 0 and loop=' + enableLoop + ', attempting to play wheel spinning...');
+            console.log('[Sounds] 🎵 Set currentTime to 0 and loop=' + enableLoop + ', attempting to play wheel spinning...');
+            
             this.wheelSpinning.play().then(() => {
-              console.log('[Sounds] Wheel spinning sound started playing successfully with loop=' + enableLoop);
+              console.log('[Sounds] 🎵 ✅ Wheel spinning sound started playing successfully with loop=' + enableLoop);
+              console.log('[Sounds] 🎵 Audio duration:', this.wheelSpinning.duration, 'seconds');
+              console.log('[Sounds] 🎵 Audio currentTime:', this.wheelSpinning.currentTime, 'seconds');
             }).catch(e => {
-              console.warn('[Sounds] Could not play wheel spinning sound:', e);
-              console.warn('[Sounds] Error details:', e.message);
+              console.warn('[Sounds] 🎵 ❌ Could not play wheel spinning sound:', e);
+              console.warn('[Sounds] 🎵 ❌ Error details:', e.message);
               window.gameActive = false; // Reset flag on error
             });
           } else {
-            console.log('[Sounds] Wheel spinning sound already playing or game active, skipping...');
+            console.log('[Sounds] 🎵 ⚠️ Wheel spinning sound already playing or game active, skipping...');
+            console.log('[Sounds] 🎵 ⚠️ Reason: paused=' + this.wheelSpinning.paused + ', ended=' + this.wheelSpinning.ended + ', gameActive=' + window.gameActive);
           }
         } catch (error) {
-          console.warn('[Sounds] Error playing wheel spinning sound:', error);
+          console.warn('[Sounds] 🎵 ❌ Error playing wheel spinning sound:', error);
           window.gameActive = false; // Reset flag on error
         }
       } else {
-        console.warn('[Sounds] Wheel spinning audio object is null/undefined');
+        console.warn('[Sounds] 🎵 ❌ Wheel spinning audio object is null/undefined');
       }
     },
     
     stopWheelSpinning: function() {
+      console.log('[Sounds] 🛑 Attempting to stop wheel spinning sound...');
       if (this.wheelSpinning) {
         try {
+          console.log('[Sounds] 🛑 Audio state before stop - paused:', this.wheelSpinning.paused, 'ended:', this.wheelSpinning.ended, 'currentTime:', this.wheelSpinning.currentTime);
+          
           this.wheelSpinning.loop = false; // Stop looping
           this.wheelSpinning.pause();
           this.wheelSpinning.currentTime = 0;
           window.gameActive = false; // Reset global flag
-          console.log('[Sounds] Wheel spinning sound stopped and loop disabled');
+          
+          console.log('[Sounds] 🛑 ✅ Wheel spinning sound stopped and loop disabled');
+          console.log('[Sounds] 🛑 Audio state after stop - paused:', this.wheelSpinning.paused, 'ended:', this.wheelSpinning.ended, 'currentTime:', this.wheelSpinning.currentTime);
         } catch (error) {
-          console.warn('[Sounds] Error stopping wheel spinning sound:', error);
+          console.warn('[Sounds] 🛑 ❌ Error stopping wheel spinning sound:', error);
         }
+      } else {
+        console.warn('[Sounds] 🛑 ❌ Wheel spinning audio object is null/undefined');
+      }
+    },
+    
+    getWheelSoundDuration: function() {
+      console.log('[Sounds] 🎵 Getting wheel spinning sound duration...');
+      return new Promise((resolve, reject) => {
+        if (this.wheelSpinning) {
+          // Check if audio is already loaded
+          if (this.wheelSpinning.readyState >= 2) { // HAVE_CURRENT_DATA or higher
+            console.log('[Sounds] 🎵 Audio already loaded, duration:', this.wheelSpinning.duration, 'seconds');
+            resolve(this.wheelSpinning.duration);
+          } else {
+            // Wait for audio to load
+            console.log('[Sounds] 🎵 Audio not fully loaded, waiting...');
+            this.wheelSpinning.addEventListener('canplaythrough', () => {
+              console.log('[Sounds] 🎵 Audio loaded, duration:', this.wheelSpinning.duration, 'seconds');
+              resolve(this.wheelSpinning.duration);
+            }, { once: true });
+            
+            // Timeout after 5 seconds
+            setTimeout(() => {
+              console.warn('[Sounds] 🎵 ⚠️ Audio loading timeout, using fallback duration');
+              resolve(8.0); // Fallback to 8 seconds
+            }, 5000);
+          }
+        } else {
+          console.warn('[Sounds] 🎵 ❌ Wheel spinning audio object not found, using fallback duration');
+          resolve(8.0); // Fallback to 8 seconds
+        }
+      });
+    },
+    
+    prepareWheelSpinning: function() {
+      console.log('[Sounds] 🎵 Preparing wheel spinning sound for immediate playback...');
+      if (this.wheelSpinning) {
+        // Check if audio is already loaded and ready
+        if (this.wheelSpinning.readyState >= 2) { // HAVE_CURRENT_DATA or higher
+          console.log('[Sounds] 🎵 Audio already loaded and ready, duration:', this.wheelSpinning.duration, 'seconds');
+          return;
+        }
+        
+        // Audio not fully loaded, wait for it to be ready
+        console.log('[Sounds] 🎵 Audio loading, readyState:', this.wheelSpinning.readyState);
+        this.wheelSpinning.addEventListener('canplaythrough', () => {
+          console.log('[Sounds] 🎵 Audio fully loaded and ready for immediate playback');
+        }, { once: true });
+        
+        // Load audio if not already loading
+        if (this.wheelSpinning.readyState === 0) { // HAVE_NOTHING
+          console.log('[Sounds] 🎵 Loading audio file...');
+          this.wheelSpinning.load();
+        }
+      } else {
+        console.warn('[Sounds] 🎵 ❌ Wheel spinning audio object not found');
       }
     },
     
@@ -1105,6 +1177,10 @@ jQuery(document).ready(function($) {
         return;
       }
       
+      // PRE-LOAD SOUND IMMEDIATELY when user clicks (don't wait for AJAX)
+      console.log('[Wheel] 🎵 User clicked spin - pre-loading sound immediately...');
+      gameSounds.prepareWheelSpinning();
+      
       console.log('[Security] Playing ticket on server:', nextTicket.number);
       $(this).prop('disabled', true).text('🔒 Validating...');
       
@@ -1219,8 +1295,26 @@ jQuery(document).ready(function($) {
     debugBtn.click(() => debugGameTypes());
     buttonsRow.append(debugBtn);
     
+    // Add Test Wheel Sound button
+    const soundTestBtn = $('<button class="test-btn" style="padding:8px 12px;font-size:12px;border:1px solid #fd7e14;background:#fd7e14;color:white;border-radius:4px;cursor:pointer;">🎵 Test Wheel Sound</button>');
+    soundTestBtn.click(() => testWheelSound());
+    buttonsRow.append(soundTestBtn);
+    
     testContainer.append(buttonsRow);
     $('#instantwin-game-canvas').append(testContainer);
+  }
+  
+  function testWheelSound() {
+    console.log('[Test] 🎵 Playing wheel sound...');
+    
+    // Reset gameActive flag for testing
+    window.gameActive = false;
+    console.log('[Test] 🎵 Reset gameActive flag for testing');
+    
+    // Just play the sound directly
+    gameSounds.playWheelSpinning(false);
+    
+    console.log('[Test] 🎵 Wheel sound played!');
   }
   
   function testWheelResult(targetPrize) {
@@ -4614,9 +4708,11 @@ jQuery(document).ready(function($) {
     
     // Set animation callback
     wheelInstance.animation.callbackFinished = function(indicatedSegment) {
-      console.log('[Game] Animation finished - landed on:', indicatedSegment.text);
+      console.log('[Wheel] 🎡 Animation callback triggered - landed on:', indicatedSegment.text);
+      console.log('[Wheel] 🎡 Animation duration was:', this.duration, 'seconds');
       
       // Stop wheel spinning sound exactly when animation finishes
+      console.log('[Wheel] 🛑 About to stop wheel spinning sound from animation callback...');
       gameSounds.stopWheelSpinning();
       
       // Update play history
@@ -4635,12 +4731,20 @@ jQuery(document).ready(function($) {
       showResultModal(indicatedSegment.text !== 'X', indicatedSegment.text);
     };
     
-    // Play wheel spinning sound right before starting animation (no loop for wheel - single play)
+    // Pre-load and prepare wheel spinning sound for immediate playback
+    console.log('[Wheel] 🎵 Preparing wheel spinning sound for immediate playback...');
+    gameSounds.prepareWheelSpinning();
+    
+    // Play sound immediately when ready
+    console.log('[Wheel] 🎵 Playing wheel spinning sound...');
     gameSounds.playWheelSpinning(false);
     
     // Start animation
+    console.log('[Wheel] 🎡 Starting wheel animation...');
     wheelInstance.startAnimation();
-    console.log('[Game] Wheel animation started');
+    console.log('[Wheel] 🎡 Wheel animation started');
+    
+    // Note: Sound will be stopped by callbackFinished when animation ends
   }
   
   function showResultModal(isWin, prize) {
