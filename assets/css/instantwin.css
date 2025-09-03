@@ -2257,3 +2257,417 @@ div#scratch-cards-slider .owl-item .scratch-card-individual {
   }
 }
 
+/* ========================================
+   INSTANT WIN CHECKER STYLES
+   ======================================== */
+
+/* Checker Card Styles */
+.checker-card {
+  border: 2px solid #28a745 !important;
+  background: linear-gradient(135deg, #d4edda, #c3e6cb) !important;
+}
+
+.checker-card:hover {
+  border-color: #1e7e34 !important;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3) !important;
+}
+
+.checker-btn {
+  background: linear-gradient(135deg, #28a745, #20c997) !important;
+  border-color: #28a745 !important;
+  color: white !important;
+}
+
+.checker-btn:hover {
+  background: linear-gradient(135deg, #1e7e34, #1a9b7a) !important;
+  border-color: #1e7e34 !important;
+}
+
+/* Instant Win Checker Main Container */
+.instant-win-checker {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 15px;
+  padding: 30px;
+  margin: 20px 0;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Use existing game-lobby-header styling for consistency */
+.instant-win-checker .game-lobby-header {
+  margin-bottom: 30px;
+}
+
+.instant-win-checker .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.instant-win-checker .header-left h3 {
+  color: #495057;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+}
+
+.instant-win-checker .header-left h6 {
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.instant-win-checker .header-right {
+  flex-shrink: 0;
+}
+
+.instant-win-checker .back-to-lobby-btn {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.instant-win-checker .back-to-lobby-btn:hover {
+  background: linear-gradient(135deg, #495057, #343a40);
+  transform: translateY(-2px);
+}
+
+/* Checker Body */
+.checker-body {
+  text-align: center;
+}
+
+.checker-status {
+  margin-bottom: 30px;
+}
+
+.status-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 15px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #28a745, #20c997);
+  border-radius: 10px;
+  transition: width 0.5s ease;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Current Ticket Display */
+.current-ticket {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.ticket-display {
+  font-size: 20px;
+  font-weight: 600;
+  color: #495057;
+  padding: 15px;
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+}
+
+/* Winners Count */
+.winners-count {
+  margin-bottom: 30px;
+}
+
+.winners-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #28a745;
+  padding: 15px 25px;
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  border-radius: 10px;
+  border: 2px solid #28a745;
+  display: inline-block;
+}
+
+.winners-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e7e34;
+}
+
+/* Checker Controls */
+.checker-controls {
+  margin-top: 30px;
+}
+
+.start-checking-btn, .stop-checking-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0 10px;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.start-checking-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.stop-checking-btn {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.stop-checking-btn:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+/* Win Popup Styles */
+.checker-win-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.checker-win-popup .win-content {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+  width: 90%;
+}
+
+.win-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+}
+
+.win-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #28a745;
+  margin-bottom: 15px;
+}
+
+.win-ticket {
+  font-size: 18px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 10px;
+}
+
+.win-prize {
+  font-size: 20px;
+  font-weight: 700;
+  color: #dc3545;
+  margin-bottom: 25px;
+}
+
+.close-win-popup {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.close-win-popup:hover {
+  background: linear-gradient(135deg, #1e7e34, #1a9b7a);
+  transform: translateY(-2px);
+}
+
+/* Final Results Popup */
+.checker-final-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.checker-final-popup .final-content {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  animation: slideIn 0.3s ease;
+  max-width: 500px;
+  width: 90%;
+}
+
+.final-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+}
+
+.final-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #007bff;
+  margin-bottom: 25px;
+}
+
+.final-stats {
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #007bff;
+}
+
+.final-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.back-to-lobby-final, .check-again-btn {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.check-again-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+}
+
+.back-to-lobby-final:hover, .check-again-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .instant-win-checker {
+    padding: 20px;
+    margin: 10px;
+  }
+  
+  .checker-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .checker-header h2 {
+    font-size: 20px;
+  }
+  
+  .ticket-display {
+    font-size: 16px;
+  }
+  
+  .winners-text {
+    font-size: 16px;
+  }
+  
+  .final-actions {
+    flex-direction: column;
+  }
+  
+  .start-checking-btn, .stop-checking-btn {
+    margin: 5px 0;
+  }
+}
+

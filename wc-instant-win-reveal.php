@@ -79,7 +79,15 @@ class WC_Instant_Win_Reveal {
         add_action( 'wp_ajax_nopriv_get_all_auto_reveal_states', [ $this, 'ajax_get_all_auto_reveal_states' ] );
         
         add_action( 'wp_ajax_clear_auto_reveal_states', [ $this, 'ajax_clear_auto_reveal_states' ] );
-        add_action( 'wp_ajax_nopriv_clear_auto_reveal_states', [ $this, 'ajax_clear_auto_reveal_states' ] );
+add_action( 'wp_ajax_nopriv_clear_auto_reveal_states', [ $this, 'ajax_clear_auto_reveal_states' ] );
+
+// Instant Win Checker - check all tickets
+add_action( 'wp_ajax_instantwin_check_all_tickets', [ $this, 'ajax_check_all_tickets' ] );
+add_action( 'wp_ajax_nopriv_instantwin_check_all_tickets', [ $this, 'ajax_check_all_tickets' ] );
+
+// Debug function for checking game types
+add_action( 'wp_ajax_instantwin_debug_game_types', [ $this, 'ajax_debug_game_types' ] );
+add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_game_types' ] );
         
         register_activation_hook(   __FILE__, [ $this, 'flush_rewrite_rules_on_activate' ] );
         register_deactivation_hook( __FILE__, [ $this, 'flush_rewrite_rules' ] );
@@ -111,8 +119,22 @@ class WC_Instant_Win_Reveal {
             $pid      = $item->get_product_id();
             $product  = wc_get_product( $pid );
             $title    = $product ? $product->get_title() : '';
-            $mode     = get_post_meta( $pid, 'instant_win_game_type', true ) ?: 'wheel';
-            $mode     = in_array( $mode, ['wheel','slots','scratch'], true ) ? $mode : 'wheel';
+            
+            // Get game type
+            $game_type_raw = get_post_meta( $pid, 'instant_win_game_type', true );
+            
+            // Handle products with no game - send email notification immediately but still add to sessions for checker
+            if ( empty($game_type_raw) || $game_type_raw === 'no' || !in_array( $game_type_raw, ['wheel','slots','scratch'], true ) ) {
+                error_log("[InstantWin] Product {$pid} ({$title}) has no game - game_type: '{$game_type_raw}' - sending email notification immediately");
+                
+                // Send email notification for products with no game
+                $this->send_win_notification( $order_id, $pid );
+                
+                // Set mode to checker for Instant Win Checker
+                $mode = 'checker';
+            } else {
+                $mode = (string) $game_type_raw;
+            }
     
             // Build wins_map for THIS specific product
             $wins_map = [];
@@ -258,8 +280,17 @@ class WC_Instant_Win_Reveal {
             $pid      = (int) $item->get_product_id();
             $product  = wc_get_product( $pid );
             $title    = $product ? (string) $product->get_title() : '';
-            $mode     = (string) (get_post_meta( $pid, 'instant_win_game_type', true ) ?: 'wheel');
-            $mode     = in_array( $mode, ['wheel','slots','scratch'], true ) ? $mode : 'wheel';
+            
+            // Get game type
+            $game_type_raw = get_post_meta( $pid, 'instant_win_game_type', true );
+            
+            // Skip products with no game (they don't appear in fresh reveal data)
+            if ( empty($game_type_raw) || $game_type_raw === 'no' || !in_array( $game_type_raw, ['wheel','slots','scratch'], true ) ) {
+                error_log("[InstantWin] Product {$pid} ({$title}) skipped from fresh reveal data - game_type: '{$game_type_raw}' (no game)");
+                continue; // Skip this product from fresh reveal data
+            }
+            
+            $mode = (string) $game_type_raw;
             
             // Get product image
             $image_id = $product ? $product->get_image_id() : 0;
@@ -277,6 +308,9 @@ class WC_Instant_Win_Reveal {
                     break;
                 case 'scratch':
                     $background_field = 'scratch_game_background';
+                    break;
+                case 'checker':
+                    $background_field = 'checker_game_background'; // Optional: can be empty for default styling
                     break;
             }
             
@@ -906,7 +940,17 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
             $pid = (int) $item->get_product_id();
             $product = wc_get_product( $pid );
             $title = $product ? (string) $product->get_title() : '';
-            $mode = (string) (get_post_meta( $pid, 'instant_win_game_type', true ) ?: 'wheel');
+            
+            // Get game type
+            $game_type_raw = get_post_meta( $pid, 'instant_win_game_type', true );
+            
+            // Handle products with no game - show them in game lobby as "Instant Win Checker"
+            if ( empty($game_type_raw) || $game_type_raw === 'no' || !in_array( $game_type_raw, ['wheel','slots','scratch'], true ) ) {
+                error_log("[InstantWin] Product {$pid} ({$title}) will show as Instant Win Checker - game_type: '{$game_type_raw}' (no game)");
+                $mode = 'checker'; // Special mode for Instant Win Checker
+            } else {
+                $mode = (string) $game_type_raw;
+            }
             
             $image_id = $product ? $product->get_image_id() : 0;
             $image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
@@ -923,6 +967,9 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                     break;
                 case 'scratch':
                     $background_field = 'scratch_game_background';
+                    break;
+                case 'checker':
+                    $background_field = 'checker_game_background'; // Optional: can be empty for default styling
                     break;
             }
             
@@ -1809,6 +1856,183 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
             }
         }
         return $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    }
+    
+    /**
+     * Debug function to check instant_win_game_type for all products
+     */
+    public function ajax_debug_game_types() {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'instantwin_nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        $order_id = intval($_POST['order_id']);
+        if (!$order_id) {
+            wp_send_json_error('Invalid order ID');
+            return;
+        }
+        
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error('Order not found');
+            return;
+        }
+        
+        $debug_data = [];
+        $skipped_products = [];
+        
+        foreach ($order->get_items() as $item) {
+            $pid = (int) $item->get_product_id();
+            $product = wc_get_product($pid);
+            $title = $product ? (string) $product->get_title() : '';
+            
+            // Get instant_win_game_type
+            $game_type_raw = get_post_meta($pid, 'instant_win_game_type', true);
+            
+            // Handle products with no game - show them in game lobby as "Instant Win Checker"
+            if (empty($game_type_raw) || $game_type_raw === 'no' || !in_array($game_type_raw, ['wheel','slots','scratch'], true)) {
+                $game_type_final = 'checker'; // Special mode for Instant Win Checker
+                $action = 'Will appear in game lobby as Instant Win Checker';
+            } else {
+                $game_type_final = (string) $game_type_raw;
+                $action = 'Will appear in game lobby';
+            }
+            
+            // Get ACF fields
+            $has_instant_tickets_prizes = function_exists('have_rows') && have_rows('instant_tickets_prizes', $pid);
+            $prizes_count = 0;
+            if ($has_instant_tickets_prizes) {
+                $prizes = get_field('instant_tickets_prizes', $pid);
+                $prizes_count = is_array($prizes) ? count($prizes) : 0;
+            }
+            
+            $debug_data[] = [
+                'product_id' => $pid,
+                'title' => $title,
+                'game_type_raw' => $game_type_raw,
+                'game_type_final' => $game_type_final,
+                'has_instant_tickets_prizes' => $has_instant_tickets_prizes,
+                'prizes_count' => $prizes_count,
+                'action' => $action,
+                'post_meta_all' => get_post_meta($pid)
+            ];
+        }
+        
+        wp_send_json_success([
+            'order_id' => $order_id,
+            'products_in_game' => $debug_data,
+            'products_skipped' => [], // No products are skipped anymore
+            'summary' => [
+                'total_products' => count($order->get_items()),
+                'products_in_game' => count($debug_data),
+                'products_skipped' => 0
+            ]
+        ]);
+    }
+    
+    /**
+     * AJAX handler to check all tickets for a product (Instant Win Checker)
+     */
+    public function ajax_check_all_tickets() {
+        // Verify nonce
+        if (!wp_verify_nonce($_POST['nonce'], 'instantwin_nonce')) {
+            wp_send_json_error('Invalid nonce');
+            return;
+        }
+        
+        $order_id = intval($_POST['order_id']);
+        $product_id = intval($_POST['product_id']);
+        
+        if (!$order_id || !$product_id) {
+            wp_send_json_error('Invalid order ID or product ID');
+            return;
+        }
+        
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error('Order not found');
+            return;
+        }
+        
+        $product = wc_get_product($product_id);
+        if (!$product) {
+            wp_send_json_error('Product not found');
+            return;
+        }
+        
+        // Verify the product is in this order
+        $product_in_order = false;
+        foreach ($order->get_items() as $item) {
+            if ($item->get_product_id() == $product_id) {
+                $product_in_order = true;
+                break;
+            }
+        }
+        
+        if (!$product_in_order) {
+            wp_send_json_error('Product not found in this order');
+            return;
+        }
+        
+        // Get all tickets for this product
+        $sessions = get_post_meta($order_id, '_instantwin_sessions', true) ?: [];
+        $product_tickets = [];
+        
+        foreach ($sessions as $session) {
+            if ($session['product_id'] == $product_id) {
+                $product_tickets = $session['tickets'] ?? [];
+                break;
+            }
+        }
+        
+        if (empty($product_tickets)) {
+            wp_send_json_error('No tickets found for this product');
+            return;
+        }
+        
+        // Check each ticket and determine win/lose status
+        $checked_tickets = [];
+        $winners_found = 0;
+        
+        foreach ($product_tickets as $ticket) {
+            $ticket_number = $ticket['number'];
+            $ticket_status = $ticket['status'] ?? 'LOSE';
+            $ticket_prize = $ticket['prize'] ?? '';
+            
+            // Determine if this ticket is a winner
+            $is_winner = ($ticket_status === 'WIN');
+            if ($is_winner) {
+                $winners_found++;
+            }
+            
+            $checked_tickets[] = [
+                'number' => $ticket_number,
+                'status' => $ticket_status,
+                'prize' => $ticket_prize,
+                'is_winner' => $is_winner
+            ];
+        }
+        
+        // Calculate win rate
+        $total_tickets = count($checked_tickets);
+        $win_rate = $total_tickets > 0 ? ($winners_found / $total_tickets) * 100 : 0;
+        
+        wp_send_json_success([
+            'product_id' => $product_id,
+            'product_title' => $product->get_title(),
+            'total_tickets' => $total_tickets,
+            'winners_found' => $winners_found,
+            'win_rate' => round($win_rate, 1),
+            'tickets' => $checked_tickets,
+            'summary' => [
+                'total_checked' => $total_tickets,
+                'winners' => $winners_found,
+                'losers' => $total_tickets - $winners_found,
+                'win_percentage' => round($win_rate, 1) . '%'
+            ]
+        ]);
     }
     
 }

@@ -744,11 +744,22 @@ jQuery(document).ready(function($) {
       
       console.log('[UI] Product', idx, ':', product.title, '- Mode:', product.mode, '- Remaining:', remaining, '- Revealed:', isRevealed);
       
-      // Determine button text and class based on revealed status
-      const buttonText = isRevealed ? '✅ Completed' : `${gameIcon} Play Now`;
-      const buttonClass = isRevealed ? 'select-product-btn w-btn us-btn-style_1 completed-btn' : 'select-product-btn w-btn us-btn-style_1';
-      const cardClass = isRevealed ? 'product-card game-completed' : 'product-card';
-      const playsText = isRevealed ? '' : `Plays left: ${remaining}`;
+      // Determine button text and class based on revealed status and game mode
+      let buttonText, buttonClass, cardClass, playsText;
+      
+      if (product.mode === 'checker') {
+        // Instant Win Checker mode
+        buttonText = isRevealed ? '✅ Checked' : '🔍 Check Results';
+        buttonClass = isRevealed ? 'select-product-btn w-btn us-btn-style_1 completed-btn' : 'select-product-btn w-btn us-btn-style_1 checker-btn';
+        cardClass = isRevealed ? 'product-card game-completed checker-card' : 'product-card checker-card';
+        playsText = isRevealed ? '' : `Tickets: ${originalRemaining}`;
+      } else {
+        // Regular game modes (wheel, slots, scratch)
+        buttonText = isRevealed ? '✅ Completed' : `${gameIcon} Play Now`;
+        buttonClass = isRevealed ? 'select-product-btn w-btn us-btn-style_1 completed-btn' : 'select-product-btn w-btn us-btn-style_1';
+        cardClass = isRevealed ? 'product-card game-completed' : 'product-card';
+        playsText = isRevealed ? '' : `Plays left: ${remaining}`;
+      }
       
       html += `
         <div class="${cardClass}" data-idx="${idx}">
@@ -820,13 +831,29 @@ jQuery(document).ready(function($) {
     // Make entire product card clickable (only for non-completed games)
     $('.product-card:not(.game-completed)').on('click', function() {
       currentProductIdx = parseInt($(this).data('idx'));
+      currentProduct = products[currentProductIdx];
+      
+      console.log('[UI] Card clicked - idx:', currentProductIdx, 'product:', currentProduct);
+      
+      if (currentProduct && currentProduct.mode === 'checker') {
+        showInstantWinChecker();
+      } else {
       showPlayScreen();
+      }
     });
     
     $('.select-product-btn:not(.completed-btn)').on('click', function(e) {
       e.stopPropagation(); // Prevent double-triggering from card click
       currentProductIdx = parseInt($(this).closest('.product-card').data('idx'));
+      currentProduct = products[currentProductIdx];
+      
+      console.log('[UI] Button clicked - idx:', currentProductIdx, 'product:', currentProduct);
+      
+      if (currentProduct && currentProduct.mode === 'checker') {
+        showInstantWinChecker();
+      } else {
       showPlayScreen();
+      }
     });
     
     // Add click prevention for completed games
@@ -5301,6 +5328,16 @@ jQuery(document).ready(function($) {
         console.log('[Test] Clearing all scratch progress...');
         clearAllScratchProgress();
         
+        // Clear any ongoing checker processes
+        console.log('[Test] Clearing checker processes...');
+        if (window.checkingInterval) {
+          clearInterval(window.checkingInterval);
+          window.checkingInterval = null;
+        }
+        
+        // Close any open checker popups
+        $('.checker-win-popup, .checker-final-popup').remove();
+        
         // Now load fresh data from server
         $.ajax({
           url: instantWin.ajax_url,
@@ -5844,6 +5881,330 @@ jQuery(document).ready(function($) {
         notification.remove();
       }, 600);
     }, 2500);
+  }
+  
+  // Function to show Instant Win Checker
+  function showInstantWinChecker() {
+    console.log('[Checker] Showing Instant Win Checker for product:', currentProductIdx);
+    console.log('[Checker] Current product:', currentProduct);
+    console.log('[Checker] Current product mode:', currentProduct ? currentProduct.mode : 'undefined');
+    
+    if (!currentProduct) {
+      console.error('[Checker] No current product found');
+      return;
+    }
+    
+    if (currentProduct.mode !== 'checker') {
+      console.error('[Checker] Product mode is not checker:', currentProduct.mode);
+      return;
+    }
+    
+    // Hide game lobby and show checker screen (same as other games)
+    $('#instantwin-game-lobby').hide();
+    
+    // Use the existing game area container (same as other games)
+    let $container = $('#instantwin-game-area');
+    if ($container.length === 0) {
+      // Fallback: create game container if not found
+      $gameLobby.after('<div id="instantwin-game-area" class="instantwin-play-container"></div>');
+      $container = $('#instantwin-game-area');
+    } else {
+      $container.empty().removeClass().addClass('instantwin-play-container');
+    }
+    
+    // Show the game container
+    $container.show();
+    
+    // Add Back to Lobby button to the top of game-lobby-header (same as other games)
+    const $existingHeader = $('.game-lobby-header');
+    console.log('[Checker] Looking for game-lobby-header:', $existingHeader.length);
+    console.log('[Checker] All headers on page:', $('.game-lobby-header, .header-content, .instantwin-wrap').length);
+    console.log('[Checker] Page structure:', $('body').html().substring(0, 500));
+    
+    if ($existingHeader.length > 0) {
+      console.log('[Checker] Found game-lobby-header, adding back button...');
+      // Check if back button already exists
+      if ($existingHeader.find('.back-to-lobby-top').length === 0) {
+        const backBtnTop = $('<button class="back-to-lobby-top w-btn us-btn-style_1">← Back to Lobby</button>');
+        backBtnTop.on('click', function() {
+          $container.hide();
+          $('#instantwin-game-lobby').show();
+          
+          // Restore original header text
+          $existingHeader.find('h6').text('Order confirmed');
+          $existingHeader.find('h3').html("You've unlocked Instant Games 🎰 <span>Choose a game below:</span>");
+          
+          // Remove the back button from header
+          $existingHeader.find('.back-to-lobby-top').remove();
+          
+          // Refresh the lobby to show updated ticket counts
+          showGameLobby();
+        });
+        
+        // Make header relative positioned and add back button
+        $existingHeader.css('position', 'relative').prepend(backBtnTop);
+        console.log('[Checker] Back button added to header');
+      } else {
+        console.log('[Checker] Back button already exists');
+      }
+    } else {
+      console.log('[Checker] No game-lobby-header found!');
+    }
+    
+    // Update the existing game lobby header (same as other games)
+    const $gameHeader = $('.game-lobby-header');
+    if ($gameHeader.length > 0) {
+      $gameHeader.find('h6').text(currentProduct.title);
+      $gameHeader.find('h3').html(`🔍 You are checking tickets for ${currentProduct.mode} game`);
+      console.log('[Checker] Header text updated');
+    } else {
+      console.log('[Checker] No header found to update');
+    }
+    
+    // Game Canvas Container
+    const $gameCanvas = $('<div id="instantwin-game-canvas"></div>');
+    $container.append($gameCanvas);
+    
+    console.log('[Checker] Game lobby hidden:', $gameLobby.is(':visible'));
+    console.log('[Checker] Game area shown:', $container.is(':visible'));
+    console.log('[Checker] Game canvas element:', $gameCanvas.length);
+    
+    // Create Instant Win Checker UI (no header needed - using existing game-lobby-header)
+    const checkerHTML = `
+      <div class="instant-win-checker">
+        <div class="checker-body">
+          <div class="checker-status">
+            <div class="status-text">Preparing to check tickets...</div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text">0 / ${currentProduct.tickets ? currentProduct.tickets.length : 0} tickets checked</div>
+          </div>
+          
+          <div class="current-ticket">
+            <div class="ticket-display">Ready to start checking...</div>
+          </div>
+          
+          <div class="winners-count">
+            <div class="winners-text">🎁 Winners found: <span class="winners-number">0</span></div>
+          </div>
+          
+          <div class="checker-controls">
+            <button class="start-checking-btn" id="start-checking-btn">🚀 Start Checking</button>
+            <button class="stop-checking-btn" id="stop-checking-btn" style="display: none;">⏹️ Stop Checking</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    $gameCanvas.html(checkerHTML);
+    
+    console.log('[Checker] HTML set to game canvas');
+    console.log('[Checker] Game canvas content length:', $gameCanvas.html().length);
+    console.log('[Checker] Instant win checker element:', $('.instant-win-checker').length);
+    console.log('[Checker] Instant win checker visible:', $('.instant-win-checker').is(':visible'));
+    
+    // Add event handlers
+    $('#start-checking-btn').on('click', startTicketChecking);
+    $('#stop-checking-btn').on('click', stopTicketChecking);
+    
+    console.log('[Checker] Instant Win Checker UI created');
+  }
+  
+  // Function to start checking tickets
+  function startTicketChecking() {
+    console.log('[Checker] Starting ticket checking process');
+    
+    if (!currentProduct || !currentProduct.tickets || currentProduct.tickets.length === 0) {
+      console.error('[Checker] No tickets to check');
+      return;
+    }
+    
+    // Update UI
+    $('#start-checking-btn').hide();
+    $('#stop-checking-btn').show();
+    $('.status-text').text('Checking tickets...');
+    
+    // Start the checking process
+    checkAllTickets();
+  }
+  
+  // Function to stop checking tickets
+  function stopTicketChecking() {
+    console.log('[Checker] Stopping ticket checking process');
+    
+    // Update UI
+    $('#start-checking-btn').show();
+    $('#stop-checking-btn').hide();
+    $('.status-text').text('Checking stopped');
+    
+    // Clear any ongoing checking
+    if (window.checkingInterval) {
+      clearInterval(window.checkingInterval);
+      window.checkingInterval = null;
+    }
+  }
+  
+  // Function to check all tickets
+  function checkAllTickets() {
+    console.log('[Checker] Starting to check all tickets for product:', currentProduct.product_id);
+    
+    // Update UI
+    $('.status-text').text('Checking tickets on server...');
+    
+    // Call server to check all tickets
+    $.ajax({
+      url: ajaxurl,
+      type: 'POST',
+      data: {
+        action: 'instantwin_check_all_tickets',
+        nonce: instantwin_nonce,
+        order_id: orderId,
+        product_id: currentProduct.product_id
+      },
+      success: function(response) {
+        if (response.success) {
+          console.log('[Checker] Server response:', response.data);
+          processServerTicketResults(response.data);
+        } else {
+          console.error('[Checker] Server error:', response.data);
+          $('.status-text').text('Error checking tickets: ' + response.data);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('[Checker] AJAX error:', error);
+        $('.status-text').text('Error connecting to server');
+      }
+    });
+  }
+  
+  // Function to process server ticket results
+  function processServerTicketResults(data) {
+    const tickets = data.tickets || [];
+    const totalTickets = data.total_tickets || 0;
+    const winnersFound = data.winners_found || 0;
+    
+    console.log('[Checker] Processing', totalTickets, 'tickets,', winnersFound, 'winners');
+    
+    // Update UI with final results
+    $('.status-text').text('Checking completed!');
+    $('.ticket-display').text('All tickets checked');
+    $('.winners-number').text(winnersFound);
+    updateCheckerProgress(totalTickets, totalTickets);
+    
+    // Show individual win popups for each winner
+    let winIndex = 0;
+    const winners = tickets.filter(ticket => ticket.is_winner);
+    
+    if (winners.length > 0) {
+      showNextWinnerPopup(winners, winIndex);
+    } else {
+      // No winners, show final results immediately
+      setTimeout(() => {
+        showCheckerFinalResults(winnersFound, totalTickets);
+      }, 1000);
+    }
+  }
+  
+  // Function to show next winner popup
+  function showNextWinnerPopup(winners, index) {
+    if (index >= winners.length) {
+      // All winners shown, show final results
+      setTimeout(() => {
+        showCheckerFinalResults(winners.length, winners.length + (currentProduct.tickets ? currentProduct.tickets.length - winners.length : 0));
+      }, 1000);
+      return;
+    }
+    
+    const winner = winners[index];
+    console.log('[Checker] Showing winner popup for:', winner.number, winner.prize);
+    
+    showCheckerWinPopup(winner.number, winner.prize);
+    
+    // Show next winner after popup closes
+    setTimeout(() => {
+      showNextWinnerPopup(winners, index + 1);
+    }, 3000); // 3 seconds per popup
+  }
+  
+  // Function to update checker progress
+  function updateCheckerProgress(current, total) {
+    const percentage = (current / total) * 100;
+    $('.progress-fill').css('width', percentage + '%');
+    $('.progress-text').text(`${current} / ${total} tickets checked`);
+  }
+  
+  // Function to show win popup for checker
+  function showCheckerWinPopup(ticketNumber, prize) {
+    const winHTML = `
+      <div class="checker-win-popup">
+        <div class="win-content">
+          <div class="win-icon">🎉</div>
+          <div class="win-title">Congratulations!</div>
+          <div class="win-ticket">Ticket #${ticketNumber}</div>
+          <div class="win-prize">${prize}</div>
+          <button class="close-win-popup" onclick="closeCheckerWinPopup()">Continue Checking</button>
+        </div>
+      </div>
+    `;
+    
+    $('body').append(winHTML);
+    
+    // Auto close after 3 seconds
+    setTimeout(() => {
+      closeCheckerWinPopup();
+    }, 3000);
+  }
+  
+  // Function to close win popup
+  function closeCheckerWinPopup() {
+    $('.checker-win-popup').remove();
+  }
+  
+  // Function to finish ticket checking
+  function finishTicketChecking(winnersFound, totalTickets) {
+    console.log('[Checker] Finished checking. Winners:', winnersFound, 'Total:', totalTickets);
+    
+    // Update UI
+    $('#start-checking-btn').show();
+    $('#stop-checking-btn').hide();
+    $('.status-text').text('Checking completed!');
+    $('.ticket-display').text('All tickets checked');
+    
+    // Show final results popup
+    showCheckerFinalResults(winnersFound, totalTickets);
+  }
+  
+  // Function to show final results
+  function showCheckerFinalResults(winnersFound, totalTickets) {
+    const finalHTML = `
+      <div class="checker-final-popup">
+        <div class="final-content">
+          <div class="final-icon">🏁</div>
+          <div class="final-title">Checking Complete!</div>
+          <div class="final-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total Tickets:</span>
+              <span class="stat-value">${totalTickets}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Winners Found:</span>
+              <span class="stat-value">${winnersFound}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Win Rate:</span>
+              <span class="stat-value">${totalTickets > 0 ? ((winnersFound / totalTickets) * 100).toFixed(1) : 0}%</span>
+            </div>
+          </div>
+          <div class="final-actions">
+            <button class="back-to-lobby-final" onclick="showGameLobby()">Back to Games</button>
+            <button class="check-again-btn" onclick="startTicketChecking()">Check Again</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    $('body').append(finalHTML);
   }
   
   // Function to show notification
