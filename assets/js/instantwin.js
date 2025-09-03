@@ -5974,15 +5974,15 @@ jQuery(document).ready(function($) {
       <div class="instant-win-checker">
         <div class="checker-body">
           <div class="checker-status">
-            <div class="status-text">Preparing to check tickets...</div>
+            <div class="status-text">Loading tickets from server...</div>
             <div class="progress-bar">
               <div class="progress-fill" style="width: 0%"></div>
             </div>
             <div class="progress-text">0 / ${currentProduct.tickets ? currentProduct.tickets.length : 0} tickets checked</div>
           </div>
           
-          <div class="current-ticket">
-            <div class="ticket-display">Ready to start checking...</div>
+          <div class="tickets-stack">
+            <!-- Tickets will be added here dynamically -->
           </div>
           
           <div class="winners-count">
@@ -5990,7 +5990,7 @@ jQuery(document).ready(function($) {
           </div>
           
           <div class="checker-controls">
-            <button class="start-checking-btn" id="start-checking-btn">🚀 Start Checking</button>
+            <button class="start-checking-btn" id="start-checking-btn" style="display: none;">🚀 Start Checking</button>
             <button class="stop-checking-btn" id="stop-checking-btn" style="display: none;">⏹️ Stop Checking</button>
           </div>
         </div>
@@ -6009,14 +6009,91 @@ jQuery(document).ready(function($) {
     $('#stop-checking-btn').on('click', stopTicketChecking);
     
     console.log('[Checker] Instant Win Checker UI created');
+    
+    // Load tickets data immediately
+    loadTicketsData();
+  }
+  
+  // Function to load tickets data from frontend (already available)
+  function loadTicketsData() {
+    console.log('[Checker] Loading tickets data for product:', currentProduct.product_id);
+    
+    if (!currentProduct || !currentProduct.tickets || currentProduct.tickets.length === 0) {
+      console.error('[Checker] No tickets available in frontend data');
+      $('.status-text').text('No tickets available');
+      return;
+    }
+    
+    // Use tickets data already available in frontend
+    const tickets = currentProduct.tickets;
+    const totalTickets = tickets.length;
+    let winnersFound = 0;
+    
+    // Count winners
+    tickets.forEach(ticket => {
+      if (ticket.status === 'WIN') {
+        winnersFound++;
+      }
+    });
+    
+    // Create server response format
+    const serverData = {
+      total_tickets: totalTickets,
+      winners_found: winnersFound,
+      win_rate: totalTickets > 0 ? (winnersFound / totalTickets * 100).toFixed(1) : 0,
+      tickets: tickets.map(ticket => ({
+        ticket_id: ticket.number,
+        is_winner: ticket.status === 'WIN',
+        prize: ticket.prize || '',
+        status: ticket.status
+      }))
+    };
+    
+    console.log('[Checker] Tickets data processed from frontend:', serverData);
+    window.checkerTicketsData = serverData;
+    createTicketsStack(serverData);
+    showStartButton();
+  }
+  
+  // Function to create tickets stack UI
+  function createTicketsStack(data) {
+    const tickets = data.tickets || [];
+    const totalTickets = data.total_tickets || 0;
+    
+    console.log('[Checker] Creating tickets stack for', totalTickets, 'tickets');
+    
+    // Update progress text
+    $('.progress-text').text(`0 / ${totalTickets} tickets checked`);
+    
+    // Create tickets stack
+    const $ticketsStack = $('.tickets-stack');
+    $ticketsStack.empty();
+    
+    tickets.forEach((ticket, index) => {
+      const ticketNumber = ticket.ticket_id || `Ticket #${index + 1}`;
+      const ticketHTML = `
+        <div class="ticket-item" data-ticket-index="${index}" style="display: none;">
+          <div class="ticket-number">${ticketNumber}</div>
+          <div class="ticket-status">Waiting...</div>
+        </div>
+      `;
+      $ticketsStack.append(ticketHTML);
+    });
+    
+    $('.status-text').text(`Ready to check ${totalTickets} tickets - Click Start to begin`);
+  }
+  
+  // Function to show start button
+  function showStartButton() {
+    $('#start-checking-btn').show();
   }
   
   // Function to start checking tickets
   function startTicketChecking() {
     console.log('[Checker] Starting ticket checking process');
     
-    if (!currentProduct || !currentProduct.tickets || currentProduct.tickets.length === 0) {
-      console.error('[Checker] No tickets to check');
+    if (!window.checkerTicketsData) {
+      console.error('[Checker] No tickets data available');
       return;
     }
     
@@ -6025,8 +6102,8 @@ jQuery(document).ready(function($) {
     $('#stop-checking-btn').show();
     $('.status-text').text('Checking tickets...');
     
-    // Start the checking process
-    checkAllTickets();
+    // Start the checking process (no AJAX needed)
+    processServerTicketResults(window.checkerTicketsData);
   }
   
   // Function to stop checking tickets
@@ -6054,12 +6131,12 @@ jQuery(document).ready(function($) {
     
     // Call server to check all tickets
     $.ajax({
-      url: ajaxurl,
+      url: instantWin.ajax_url,
       type: 'POST',
       data: {
         action: 'instantwin_check_all_tickets',
-        nonce: instantwin_nonce,
-        order_id: orderId,
+        nonce: instantWin.nonce,
+        order_id: instantWin.order_id,
         product_id: currentProduct.product_id
       },
       success: function(response) {
@@ -6086,24 +6163,64 @@ jQuery(document).ready(function($) {
     
     console.log('[Checker] Processing', totalTickets, 'tickets,', winnersFound, 'winners');
     
-    // Update UI with final results
-    $('.status-text').text('Checking completed!');
-    $('.ticket-display').text('All tickets checked');
-    $('.winners-number').text(winnersFound);
-    updateCheckerProgress(totalTickets, totalTickets);
+    // Start showing ticket checking progress
+    let currentTicketIndex = 0;
+    let winnersShown = 0;
     
-    // Show individual win popups for each winner
-    let winIndex = 0;
-    const winners = tickets.filter(ticket => ticket.is_winner);
-    
-    if (winners.length > 0) {
-      showNextWinnerPopup(winners, winIndex);
-    } else {
-      // No winners, show final results immediately
-      setTimeout(() => {
-        showCheckerFinalResults(winnersFound, totalTickets);
-      }, 1000);
+    // Function to show next ticket
+    function showNextTicket() {
+      if (currentTicketIndex >= totalTickets) {
+        // All tickets checked
+        $('.status-text').text('Checking completed!');
+        $('.winners-number').text(winnersFound);
+        updateCheckerProgress(totalTickets, totalTickets);
+        
+        // Show final results popup
+        setTimeout(() => {
+          showCheckerFinalResults(winnersFound, totalTickets);
+        }, 1000);
+        return;
+      }
+      
+      const ticket = tickets[currentTicketIndex];
+      const ticketNumber = ticket.ticket_id || `Ticket #${currentTicketIndex + 1}`;
+      
+      // Show current ticket in stack
+      const $currentTicket = $(`.ticket-item[data-ticket-index="${currentTicketIndex}"]`);
+      $currentTicket.show();
+      $currentTicket.find('.ticket-status').text(ticket.is_winner ? 'WINNER!' : 'No win');
+      
+      // Add winner/loser class
+      if (ticket.is_winner) {
+        $currentTicket.addClass('winner').removeClass('loser');
+      } else {
+        $currentTicket.addClass('loser').removeClass('winner');
+      }
+      
+      // Update UI
+      $('.status-text').text(`Checking tickets... (${currentTicketIndex + 1}/${totalTickets})`);
+      updateCheckerProgress(currentTicketIndex + 1, totalTickets);
+      
+      // If winner, show popup
+      if (ticket.is_winner) {
+        winnersShown++;
+        $('.winners-number').text(winnersShown);
+        
+        setTimeout(() => {
+          showCheckerWinPopup(ticketNumber, ticket.prize);
+        }, 500);
+      }
+      
+      currentTicketIndex++;
+      
+      // Show next ticket after delay
+      setTimeout(showNextTicket, ticket.is_winner ? 2000 : 800);
     }
+    
+    // Start the ticket checking animation
+    showNextTicket();
+    
+
   }
   
   // Function to show next winner popup

@@ -149,10 +149,13 @@ add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_g
                 error_log("Arrr! Product $pid has no instant_tickets_prizes field!");
             }
             
+            error_log("[InstantWin] Processing product {$pid} ({$title}) with mode: {$mode}");
+            
             foreach ( $item->get_formatted_meta_data() as $meta ) {
                 if ( $meta->key !== 'Ticket number' ) {
                     continue;
                 }
+                error_log("[InstantWin] Found ticket meta for product {$pid}: {$meta->value}");
                 $nums = array_map( 'trim', explode( ',', $meta->value ) );
                 foreach ( $nums as $n ) {
                     if ( ! $n ) {
@@ -175,6 +178,8 @@ add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_g
                     error_log("Arrr! Created ticket object for $n: " . print_r($ticket_obj, true));
                 }
             }
+            
+            error_log("[InstantWin] Final sessions for product {$pid}: " . print_r($sessions[$pid] ?? 'NOT SET', true));
         }
         $sessions = array_values( $sessions );
         update_post_meta( $order_id, '_instantwin_sessions', wp_json_encode( $sessions ) );
@@ -386,8 +391,19 @@ add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_g
             }
         }
         
-        // Only proceed if we have games to show
-        if ( empty( $tickets_per_product ) ) return;
+        // Check if we have any instant win products (including no-game products for checker)
+        $has_any_instant_products = false;
+        foreach ( $order->get_items() as $item ) {
+            $pid = (int) $item->get_product_id();
+            $game_type_raw = get_post_meta( $pid, 'instant_win_game_type', true );
+            if ( !empty($game_type_raw) && in_array( $game_type_raw, ['wheel','slots','scratch','no'], true ) ) {
+                $has_any_instant_products = true;
+                break;
+            }
+        }
+        
+        // Only proceed if we have instant win products (including no-game for checker)
+        if ( !$has_any_instant_products ) return;
         
         $tickets_per_product = array_map(function($prod) {
             return [
@@ -1980,9 +1996,13 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
         $sessions = get_post_meta($order_id, '_instantwin_sessions', true) ?: [];
         $product_tickets = [];
         
+        error_log("[InstantWin Checker] Looking for product_id: {$product_id}");
+        error_log("[InstantWin Checker] Available sessions: " . print_r(array_column($sessions, 'product_id'), true));
+        
         foreach ($sessions as $session) {
             if ($session['product_id'] == $product_id) {
                 $product_tickets = $session['tickets'] ?? [];
+                error_log("[InstantWin Checker] Found session for product {$product_id} with " . count($product_tickets) . " tickets");
                 break;
             }
         }
