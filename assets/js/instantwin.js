@@ -6055,30 +6055,28 @@ jQuery(document).ready(function($) {
     showStartButton();
   }
   
-  // Function to create tickets stack UI
+  // Function to create tickets stack UI (single ticket display)
   function createTicketsStack(data) {
     const tickets = data.tickets || [];
     const totalTickets = data.total_tickets || 0;
     
-    console.log('[Checker] Creating tickets stack for', totalTickets, 'tickets');
+    console.log('[Checker] Creating single ticket display for', totalTickets, 'tickets');
     
     // Update progress text
     $('.progress-text').text(`0 / ${totalTickets} tickets checked`);
     
-    // Create tickets stack
+    // Create single ticket display
     const $ticketsStack = $('.tickets-stack');
     $ticketsStack.empty();
     
-    tickets.forEach((ticket, index) => {
-      const ticketNumber = ticket.ticket_id || `Ticket #${index + 1}`;
-      const ticketHTML = `
-        <div class="ticket-item" data-ticket-index="${index}" style="display: none;">
-          <div class="ticket-number">${ticketNumber}</div>
-          <div class="ticket-status">Waiting...</div>
-        </div>
-      `;
-      $ticketsStack.append(ticketHTML);
-    });
+    // Create single ticket container
+    const ticketHTML = `
+      <div class="single-ticket-display">
+        <div class="ticket-number">Ready to start...</div>
+        <div class="ticket-status">Waiting...</div>
+      </div>
+    `;
+    $ticketsStack.append(ticketHTML);
     
     $('.status-text').text(`Ready to check ${totalTickets} tickets - Click Start to begin`);
   }
@@ -6088,9 +6086,9 @@ jQuery(document).ready(function($) {
     $('#start-checking-btn').show();
   }
   
-  // Function to start checking tickets
+  // Function to start/resume checking tickets
   function startTicketChecking() {
-    console.log('[Checker] Starting ticket checking process');
+    console.log('[Checker] Starting/resuming ticket checking process');
     
     if (!window.checkerTicketsData) {
       console.error('[Checker] No tickets data available');
@@ -6098,12 +6096,21 @@ jQuery(document).ready(function($) {
     }
     
     // Update UI
-    $('#start-checking-btn').hide();
+    $('#start-checking-btn').text('Start Checking').hide();
     $('#stop-checking-btn').show();
     $('.status-text').text('Checking tickets...');
     
-    // Start the checking process (no AJAX needed)
-    processServerTicketResults(window.checkerTicketsData);
+    // If resuming, continue from where we left off
+    if (window.currentTicketIndex !== undefined) {
+      console.log('[Checker] Resuming from ticket index:', window.currentTicketIndex);
+      // Continue the checking process
+      if (window.showNextTicketFunction) {
+        window.showNextTicketFunction();
+      }
+    } else {
+      // Start fresh
+      processServerTicketResults(window.checkerTicketsData);
+    }
   }
   
   // Function to stop checking tickets
@@ -6111,15 +6118,26 @@ jQuery(document).ready(function($) {
     console.log('[Checker] Stopping ticket checking process');
     
     // Update UI
-    $('#start-checking-btn').show();
+    $('#start-checking-btn').text('Resume Checking').show();
     $('#stop-checking-btn').hide();
-    $('.status-text').text('Checking stopped');
+    $('.status-text').text('Checking paused');
     
     // Clear any ongoing checking
     if (window.checkingInterval) {
       clearInterval(window.checkingInterval);
       window.checkingInterval = null;
     }
+    
+    // Clear any ongoing ticket checking animation
+    if (window.ticketCheckingTimeout) {
+      clearTimeout(window.ticketCheckingTimeout);
+      window.ticketCheckingTimeout = null;
+    }
+    
+    // Keep current ticket display but mark as paused
+    const $ticketDisplay = $('.single-ticket-display');
+    $ticketDisplay.find('.ticket-status').text('Paused');
+    $ticketDisplay.removeClass('revealing');
   }
   
   // Function to check all tickets
@@ -6164,12 +6182,12 @@ jQuery(document).ready(function($) {
     console.log('[Checker] Processing', totalTickets, 'tickets,', winnersFound, 'winners');
     
     // Start showing ticket checking progress
-    let currentTicketIndex = 0;
+    window.currentTicketIndex = 0;
     let winnersShown = 0;
     
     // Function to show next ticket
-    function showNextTicket() {
-      if (currentTicketIndex >= totalTickets) {
+    window.showNextTicketFunction = function showNextTicket() {
+      if (window.currentTicketIndex >= totalTickets) {
         // All tickets checked
         $('.status-text').text('Checking completed!');
         $('.winners-number').text(winnersFound);
@@ -6182,24 +6200,34 @@ jQuery(document).ready(function($) {
         return;
       }
       
-      const ticket = tickets[currentTicketIndex];
-      const ticketNumber = ticket.ticket_id || `Ticket #${currentTicketIndex + 1}`;
+      const ticket = tickets[window.currentTicketIndex];
+      const ticketNumber = ticket.ticket_id || `Ticket #${window.currentTicketIndex + 1}`;
       
-      // Show current ticket in stack
-      const $currentTicket = $(`.ticket-item[data-ticket-index="${currentTicketIndex}"]`);
-      $currentTicket.show();
-      $currentTicket.find('.ticket-status').text(ticket.is_winner ? 'WINNER!' : 'No win');
+      // Show current ticket in single display with animation
+      const $ticketDisplay = $('.single-ticket-display');
+      
+      // Add revealing animation
+      $ticketDisplay.addClass('revealing');
+      
+      // Update ticket content
+      $ticketDisplay.find('.ticket-number').text(ticketNumber);
+      $ticketDisplay.find('.ticket-status').text(ticket.is_winner ? 'WINNER!' : 'No win');
       
       // Add winner/loser class
       if (ticket.is_winner) {
-        $currentTicket.addClass('winner').removeClass('loser');
+        $ticketDisplay.addClass('winner').removeClass('loser');
       } else {
-        $currentTicket.addClass('loser').removeClass('winner');
+        $ticketDisplay.addClass('loser').removeClass('winner');
       }
       
+      // Remove animation class after animation completes
+      setTimeout(() => {
+        $ticketDisplay.removeClass('revealing');
+      }, 600);
+      
       // Update UI
-      $('.status-text').text(`Checking tickets... (${currentTicketIndex + 1}/${totalTickets})`);
-      updateCheckerProgress(currentTicketIndex + 1, totalTickets);
+      $('.status-text').text(`Checking tickets... (${window.currentTicketIndex + 1}/${totalTickets})`);
+      updateCheckerProgress(window.currentTicketIndex + 1, totalTickets);
       
       // If winner, show popup
       if (ticket.is_winner) {
@@ -6211,14 +6239,14 @@ jQuery(document).ready(function($) {
         }, 500);
       }
       
-      currentTicketIndex++;
+      window.currentTicketIndex++;
       
-      // Show next ticket after delay
-      setTimeout(showNextTicket, ticket.is_winner ? 2000 : 800);
+      // Show next ticket after delay (store timeout for stop functionality)
+      window.ticketCheckingTimeout = setTimeout(window.showNextTicketFunction, ticket.is_winner ? 2000 : 800);
     }
     
     // Start the ticket checking animation
-    showNextTicket();
+    window.showNextTicketFunction();
     
 
   }
@@ -6251,32 +6279,30 @@ jQuery(document).ready(function($) {
     $('.progress-text').text(`${current} / ${total} tickets checked`);
   }
   
-  // Function to show win popup for checker
+  // Function to show win popup for checker (individual ticket win)
   function showCheckerWinPopup(ticketNumber, prize) {
-    const winHTML = `
-      <div class="checker-win-popup">
-        <div class="win-content">
-          <div class="win-icon">🎉</div>
-          <div class="win-title">Congratulations!</div>
-          <div class="win-ticket">Ticket #${ticketNumber}</div>
-          <div class="win-prize">${prize}</div>
-          <button class="close-win-popup" onclick="closeCheckerWinPopup()">Continue Checking</button>
-        </div>
-      </div>
-    `;
+    console.log('[Checker] showCheckerWinPopup called with ticket:', ticketNumber, 'prize:', prize);
     
-    $('body').append(winHTML);
+    // Decode the prize name for display (same as other games)
+    let displayPrize = prize;
+    if (prize) {
+      // Handle full Unicode sequences properly
+      displayPrize = prize.replace(/ud83cudf1f/gi, '⭐')  // Star emoji
+                         .replace(/ud83eudea8/gi, '🪨')  // Rock emoji
+                         .replace(/ud83cudf4d/gi, '🍍')  // Pineapple emoji
+                         .replace(/ud83eudd65/gi, '🥥')  // Coconut emoji
+                         .replace(/ud83cudf05/gi, '🌅')  // Sunset emoji
+                         .replace(/ud83fudfbf/gi, '🗿')  // Tiki emoji
+                         .replace(/ud83cudf1a/gi, '🐚')  // Shell emoji
+                         .replace(/u2753/gi, '❓')      // Question mark emoji
+                         .replace(/u00a3/gi, '£');      // Pound symbol
+    }
     
-    // Auto close after 3 seconds
-    setTimeout(() => {
-      closeCheckerWinPopup();
-    }, 3000);
+    // Use the same showResultModal function as other games for individual wins
+    showResultModal(true, displayPrize);
   }
   
-  // Function to close win popup
-  function closeCheckerWinPopup() {
-    $('.checker-win-popup').remove();
-  }
+
   
   // Function to finish ticket checking
   function finishTicketChecking(winnersFound, totalTickets) {
@@ -6292,36 +6318,50 @@ jQuery(document).ready(function($) {
     showCheckerFinalResults(winnersFound, totalTickets);
   }
   
-  // Function to show final results
+  // Function to show final results (show win or lose based on results)
   function showCheckerFinalResults(winnersFound, totalTickets) {
-    const finalHTML = `
-      <div class="checker-final-popup">
-        <div class="final-content">
-          <div class="final-icon">🏁</div>
-          <div class="final-title">Checking Complete!</div>
-          <div class="final-stats">
-            <div class="stat-item">
-              <span class="stat-label">Total Tickets:</span>
-              <span class="stat-value">${totalTickets}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Winners Found:</span>
-              <span class="stat-value">${winnersFound}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Win Rate:</span>
-              <span class="stat-value">${totalTickets > 0 ? ((winnersFound / totalTickets) * 100).toFixed(1) : 0}%</span>
-            </div>
-          </div>
-          <div class="final-actions">
-            <button class="back-to-lobby-final" onclick="showGameLobby()">Back to Games</button>
-            <button class="check-again-btn" onclick="startTicketChecking()">Check Again</button>
-          </div>
-        </div>
-      </div>
-    `;
+    console.log('[Checker] Showing final results. Winners:', winnersFound, 'Total:', totalTickets);
     
-    $('body').append(finalHTML);
+    if (winnersFound > 0) {
+      // Create wins data for all winners found during checking
+      const allWinners = [];
+      const tickets = window.checkerTicketsData.tickets || [];
+      
+      tickets.forEach(ticket => {
+        if (ticket.is_winner) {
+          // Decode the prize name for display
+          let displayPrize = ticket.prize;
+          if (ticket.prize) {
+            displayPrize = ticket.prize.replace(/ud83cudf1f/gi, '⭐')  // Star emoji
+                                     .replace(/ud83eudea8/gi, '🪨')  // Rock emoji
+                                     .replace(/ud83cudf4d/gi, '🍍')  // Pineapple emoji
+                                     .replace(/ud83eudd65/gi, '🥥')  // Coconut emoji
+                                     .replace(/ud83cudf05/gi, '🌅')  // Sunset emoji
+                                     .replace(/ud83fudfbf/gi, '🗿')  // Tiki emoji
+                                     .replace(/ud83cudf1a/gi, '🐚')  // Shell emoji
+                                     .replace(/u2753/gi, '❓')      // Question mark emoji
+                                     .replace(/u00a3/gi, '£');      // Pound symbol
+          }
+          
+          allWinners.push({
+            name: displayPrize,
+            ticket: ticket.ticket_id
+          });
+        }
+      });
+      
+      // Group winners by product
+      const winsData = [{
+        name: currentProduct.title,
+        prizes: allWinners
+      }];
+      
+      // Show win popup with all winners
+      showWinPopup(winsData);
+    } else {
+      // Show lose popup
+      showWinPopup([]);
+    }
   }
   
   // Function to show notification
