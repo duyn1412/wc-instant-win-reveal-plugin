@@ -478,13 +478,14 @@ jQuery(document).ready(function($) {
       const $playContainer = $gameContainer.find('.instantwin-play-container');
       const playContainerVisible = $playContainer.is(':visible');
       
-      // Check if we're actively playing a specific game (wheel, slots, scratch)
+      // Check if we're actively playing a specific game (wheel, slots, scratch, checker)
       // Search in entire page, not just in gameContainer
       const $wheelContainer = $('.wheel-container');
       const $slotsContainer = $('.slots-container');
       const $scratchContainer = $('.scratch-container'); // Fixed: was .scratch-card-large
+      const $checkerContainer = $('.instant-win-checker');
       
-      const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible');
+      const hasActiveGame = $wheelContainer.is(':visible') || $slotsContainer.is(':visible') || $scratchContainer.is(':visible') || $checkerContainer.is(':visible');
       
       // Check if all games are already revealed
       const revealedProducts = window.lastRevealedProducts || [];
@@ -503,6 +504,7 @@ jQuery(document).ready(function($) {
       console.log('[Debug] Wheel container (.wheel-container) visible:', $wheelContainer.is(':visible'));
       console.log('[Debug] Slots container (.slots-container) visible:', $slotsContainer.is(':visible'));
       console.log('[Debug] Scratch container (.scratch-container) visible:', $scratchContainer.is(':visible'));
+      console.log('[Debug] Checker container (.instant-win-checker) visible:', $checkerContainer.is(':visible'));
       console.log('[Debug] Has active game:', hasActiveGame);
       console.log('[Debug] All games revealed:', allGamesRevealed);
       console.log('[Debug] Revealed products count:', revealedProducts.length);
@@ -555,6 +557,21 @@ jQuery(document).ready(function($) {
             if (currentProduct && currentProduct.mode === 'scratch' && currentProduct.tickets.length > 0) {
               console.log('[Scratch] Instant Reveal clicked - revealing all remaining tickets first');
               revealAllTickets();
+            }
+            
+            // For checker game, show final results immediately
+            if (currentProduct && currentProduct.mode === 'checker') {
+              console.log('[Checker] Instant Reveal clicked - showing final results immediately');
+              // Get all tickets data and show final results
+              if (window.checkerTicketsData && window.checkerTicketsData.tickets) {
+                const tickets = window.checkerTicketsData.tickets;
+                const winnersFound = tickets.filter(ticket => ticket.is_winner).length;
+                showCheckerFinalResults(winnersFound, tickets.length);
+              } else {
+                // Fallback: show no winners
+                showCheckerFinalResults(0, 0);
+              }
+              return; // Don't process normal reveal results for checker
             }
             
             // Process the reveal results and show appropriate messages
@@ -5338,6 +5355,21 @@ jQuery(document).ready(function($) {
           clearInterval(window.checkingInterval);
           window.checkingInterval = null;
         }
+        if (window.ticketCheckingTimeout) {
+          clearTimeout(window.ticketCheckingTimeout);
+          window.ticketCheckingTimeout = null;
+        }
+        
+        // Reset checker state variables
+        window.currentTicketIndex = 0;
+        window.checkerTicketsData = null;
+        
+        // Reset checker UI elements
+        $('.progress-fill').css('width', '0%');
+        $('.progress-text').text('0 / 0 tickets checked');
+        $('.status-text').text('Ready to start checking...');
+        $('.winners-number').text('0');
+        $('.ticket-display').text('');
         
         // Close any open checker popups
         $('.checker-win-popup, .checker-final-popup').remove();
@@ -6473,6 +6505,12 @@ jQuery(document).ready(function($) {
       // Show lose popup
       showWinPopup([]);
     }
+    
+    // Mark checker game as completed after showing results (same as other games)
+    setTimeout(() => {
+      console.log('[Checker] Marking checker game as completed...');
+      hideGameAfterNotification();
+    }, 2000); // Wait 2 seconds after popup is shown
   }
   
   // Function to show notification
