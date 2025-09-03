@@ -5328,6 +5328,10 @@ jQuery(document).ready(function($) {
         console.log('[Test] Clearing all scratch progress...');
         clearAllScratchProgress();
         
+        // Clear checker progress from localStorage
+        console.log('[Test] Clearing checker progress...');
+        clearAllCheckerProgress();
+        
         // Clear any ongoing checker processes
         console.log('[Test] Clearing checker processes...');
         if (window.checkingInterval) {
@@ -6051,6 +6055,14 @@ jQuery(document).ready(function($) {
     
     console.log('[Checker] Tickets data processed from frontend:', serverData);
     window.checkerTicketsData = serverData;
+    
+    // Try to restore saved progress first
+    if (restoreCheckerProgress()) {
+      console.log('[Checker] Restored saved progress');
+      return;
+    }
+    
+    // If no saved progress, start fresh
     createTicketsStack(serverData);
     showStartButton();
   }
@@ -6133,6 +6145,9 @@ jQuery(document).ready(function($) {
       clearTimeout(window.ticketCheckingTimeout);
       window.ticketCheckingTimeout = null;
     }
+    
+    // Save progress when stopping
+    saveCheckerProgress();
     
     // Keep current ticket display but mark as paused
     const $ticketDisplay = $('.single-ticket-display');
@@ -6241,6 +6256,9 @@ jQuery(document).ready(function($) {
       
       window.currentTicketIndex++;
       
+      // Save progress after each ticket
+      saveCheckerProgress();
+      
       // Show next ticket after delay (store timeout for stop functionality)
       window.ticketCheckingTimeout = setTimeout(window.showNextTicketFunction, ticket.is_winner ? 2000 : 800);
     }
@@ -6308,6 +6326,9 @@ jQuery(document).ready(function($) {
   function finishTicketChecking(winnersFound, totalTickets) {
     console.log('[Checker] Finished checking. Winners:', winnersFound, 'Total:', totalTickets);
     
+    // Clear saved progress since checking is complete
+    clearCheckerProgress();
+    
     // Update UI
     $('#start-checking-btn').show();
     $('#stop-checking-btn').hide();
@@ -6316,6 +6337,96 @@ jQuery(document).ready(function($) {
     
     // Show final results popup
     showCheckerFinalResults(winnersFound, totalTickets);
+  }
+  
+  // Function to save checker progress to localStorage
+  function saveCheckerProgress() {
+    if (!window.checkerTicketsData || window.currentTicketIndex === undefined) {
+      return;
+    }
+    
+    const progressData = {
+      currentTicketIndex: window.currentTicketIndex,
+      ticketsData: window.checkerTicketsData,
+      isChecking: window.ticketCheckingTimeout !== null,
+      timestamp: new Date().toISOString()
+    };
+    
+    const key = `checker_progress_${instantWin.order_id}_${currentProduct.id}`;
+    localStorage.setItem(key, JSON.stringify(progressData));
+    console.log('[Checker] Progress saved - Ticket index:', window.currentTicketIndex);
+  }
+  
+  // Function to restore checker progress from localStorage
+  function restoreCheckerProgress() {
+    const key = `checker_progress_${instantWin.order_id}_${currentProduct.id}`;
+    const savedData = localStorage.getItem(key);
+    
+    if (!savedData) {
+      console.log('[Checker] No saved progress found');
+      return false;
+    }
+    
+    try {
+      const progressData = JSON.parse(savedData);
+      console.log('[Checker] Found saved progress:', progressData);
+      
+      // Restore state
+      window.currentTicketIndex = progressData.currentTicketIndex || 0;
+      window.checkerTicketsData = progressData.ticketsData;
+      
+      // Create UI with current state
+      createTicketsStack(progressData.ticketsData);
+      
+      // Show appropriate UI based on progress
+      if (progressData.currentTicketIndex > 0) {
+        // Show resume button if checking was in progress
+        if (progressData.isChecking) {
+          $('#start-checking-btn').text('Resume Checking').show();
+          $('.status-text').text('Checking paused - Click Resume to continue');
+        } else {
+          // Show start button if checking was stopped
+          $('#start-checking-btn').text('Resume Checking').show();
+          $('.status-text').text('Checking stopped - Click Resume to continue');
+        }
+        
+        // Update progress display
+        const totalTickets = progressData.ticketsData.total_tickets || 0;
+        updateCheckerProgress(progressData.currentTicketIndex, totalTickets);
+        $('.status-text').text(`Resume from ticket ${progressData.currentTicketIndex + 1}/${totalTickets}`);
+      } else {
+        // No progress yet, show start button
+        showStartButton();
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('[Checker] Error restoring progress:', error);
+      return false;
+    }
+  }
+  
+  // Function to clear checker progress
+  function clearCheckerProgress() {
+    const key = `checker_progress_${instantWin.order_id}_${currentProduct.id}`;
+    localStorage.removeItem(key);
+    console.log('[Checker] Progress cleared');
+  }
+  
+  // Function to clear all checker progress for all products
+  function clearAllCheckerProgress() {
+    try {
+      // Clear checker progress for all products in this order
+      if (products && products.length > 0) {
+        products.forEach(product => {
+          const key = `checker_progress_${instantWin.order_id}_${product.id}`;
+          localStorage.removeItem(key);
+        });
+      }
+      console.log('[Checker] All checker progress cleared');
+    } catch (error) {
+      console.error('[Checker] Error clearing all progress:', error);
+    }
   }
   
   // Function to show final results (show win or lose based on results)
