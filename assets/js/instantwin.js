@@ -571,6 +571,13 @@ jQuery(document).ready(function($) {
                 // Fallback: show no winners
                 showCheckerFinalResults(0, 0);
               }
+              
+              // Re-enable button and hide game area for checker
+              $btn.prop('disabled', false).text('Instant Reveal');
+              $('#instantwin-game-area').hide();
+              $('.game-lobby-page').show();
+              console.log('[Checker] Button re-enabled and game area hidden after instant reveal');
+              
               return; // Don't process normal reveal results for checker
             }
             
@@ -5783,14 +5790,42 @@ jQuery(document).ready(function($) {
     console.log('[InstantWin] hideGameAfterNotification() called');
     console.log('[InstantWin] Notification/popup closed, now hiding current game...');
     
-    // Hide only the play container, not the entire game area
+    // Hide the entire game area and play container
+    $('#instantwin-game-area').hide();
     $('.instantwin-play-container').hide();
-    console.log('[InstantWin] Play container hidden');
+    console.log('[InstantWin] Game area and play container hidden');
     
     // Mark current game as completed
     if (currentProductIdx !== undefined && products[currentProductIdx]) {
       const currentProduct = products[currentProductIdx];
       console.log('[InstantWin] Marking game as completed:', currentProduct.title);
+      
+      // Add to revealed products list to persist across page reloads
+      if (!window.lastRevealedProducts) {
+        window.lastRevealedProducts = [];
+      }
+      if (!window.lastRevealedProducts.includes(currentProduct.product_id)) {
+        window.lastRevealedProducts.push(currentProduct.product_id);
+        console.log('[InstantWin] Added to revealed products:', currentProduct.product_id);
+        
+        // Save to server to persist across page reloads (same as other games)
+        $.post(instantWin.ajax_url, {
+          action: 'instantwin_reveal_product',
+          order_id: instantWin.order_id,
+          product_id: currentProduct.product_id,
+          nonce: instantWin.nonce
+        })
+        .done(function(response) {
+          console.log('[InstantWin] Checker game marked as completed on server:', response);
+          // Update nonce if provided
+          if (response.nonce) {
+            instantWin.nonce = response.nonce;
+          }
+        })
+        .fail(function(xhr, status, error) {
+          console.error('[InstantWin] Failed to mark checker game as completed on server:', error);
+        });
+      }
       
       // Update the product card to show completed status
       const productCard = $(`.product-card[data-idx="${currentProductIdx}"]`);
@@ -5800,7 +5835,11 @@ jQuery(document).ready(function($) {
         
         // Update the button text and disable it
         const playButton = productCard.find('.select-product-btn');
-        playButton.text('✅ Completed').prop('disabled', true).addClass('completed-btn');
+        if (currentProduct.mode === 'checker') {
+          playButton.text('✅ Checked').prop('disabled', true).addClass('completed-btn');
+        } else {
+          playButton.text('✅ Completed').prop('disabled', true).addClass('completed-btn');
+        }
         
         // Update plays left to show completed
         const playsLeftElement = productCard.find('.game-plays');
@@ -5813,8 +5852,8 @@ jQuery(document).ready(function($) {
     // Always show the lobby (even for single games, so user can see completion status)
     $('.game-lobby-page').show();
     
-    // Also ensure the game area is visible
-    $('#instantwin-game-area').show();
+    // Keep game area hidden - we want to show lobby only
+    // $('#instantwin-game-area').show(); // Removed - we want to hide game area
     
     console.log('[InstantWin] Returning to lobby and showing completion status');
   }
@@ -6001,6 +6040,27 @@ jQuery(document).ready(function($) {
     const $gameCanvas = $('<div id="instantwin-game-canvas"></div>');
     $container.append($gameCanvas);
     
+    // Apply background image if available (using background_image field from server)
+    console.log('[Checker] Current product background_image:', currentProduct.background_image);
+    if (currentProduct.background_image && currentProduct.background_image.trim() !== '') {
+      // Validate that it's a proper URL
+      if (currentProduct.background_image.startsWith('http') || currentProduct.background_image.startsWith('/')) {
+        $gameCanvas.css({
+          'background-image': 'url(' + JSON.stringify(currentProduct.background_image) + ')',
+          'background-size': 'cover',
+          'background-position': 'center',
+          'background-repeat': 'no-repeat'
+        });
+        console.log('[Checker] Applied checker background:', currentProduct.background_image);
+      } else {
+        console.warn('[Checker] Invalid background image URL:', currentProduct.background_image);
+        $gameCanvas.css('background-image', '');
+      }
+    } else {
+      console.log('[Checker] No background image available');
+      $gameCanvas.css('background-image', '');
+    }
+    
     console.log('[Checker] Game lobby hidden:', $gameLobby.is(':visible'));
     console.log('[Checker] Game area shown:', $container.is(':visible'));
     console.log('[Checker] Game canvas element:', $gameCanvas.length);
@@ -6026,8 +6086,8 @@ jQuery(document).ready(function($) {
           </div>
           
           <div class="checker-controls">
-            <button class="start-checking-btn" id="start-checking-btn" style="display: none;">🚀 Start Checking</button>
-            <button class="stop-checking-btn" id="stop-checking-btn" style="display: none;">⏹️ Stop Checking</button>
+            <button class="select-product-btn w-btn us-btn-style_1" id="start-checking-btn" style="display: none;"> Start Checking</button>
+            <button class="select-product-btn w-btn us-btn-style_1 stop-checking-btn" id="stop-checking-btn" style="display: none;">⏹Stop Checking</button>
           </div>
         </div>
       </div>
@@ -6256,9 +6316,9 @@ jQuery(document).ready(function($) {
       // Add revealing animation
       $ticketDisplay.addClass('revealing');
       
-      // Update ticket content
-      $ticketDisplay.find('.ticket-number').text(ticketNumber);
-      $ticketDisplay.find('.ticket-status').text(ticket.is_winner ? 'WINNER!' : 'No win');
+      // Update ticket content with better formatting
+      $ticketDisplay.find('.ticket-number').text(`${ticketNumber}`);
+      $ticketDisplay.find('.ticket-status').text(ticket.is_winner ? '🎉 WINNER!' : '❌ No win');
       
       // Add winner/loser class
       if (ticket.is_winner) {
@@ -6448,12 +6508,27 @@ jQuery(document).ready(function($) {
   // Function to clear all checker progress for all products
   function clearAllCheckerProgress() {
     try {
+      console.log('[Checker] Clearing all checker progress...');
+      console.log('[Checker] Products array:', products);
+      console.log('[Checker] Order ID:', instantWin.order_id);
+      
       // Clear checker progress for all products in this order
       if (products && products.length > 0) {
         products.forEach(product => {
           const key = `checker_progress_${instantWin.order_id}_${product.id}`;
+          console.log('[Checker] Removing key:', key);
           localStorage.removeItem(key);
         });
+      } else {
+        // Fallback: clear all checker progress keys for this order
+        console.log('[Checker] No products array, clearing all checker keys for order');
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`checker_progress_${instantWin.order_id}_`)) {
+            console.log('[Checker] Removing fallback key:', key);
+            localStorage.removeItem(key);
+          }
+        }
       }
       console.log('[Checker] All checker progress cleared');
     } catch (error) {
