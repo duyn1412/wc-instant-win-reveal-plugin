@@ -2457,16 +2457,16 @@
   }
   
   .single-ticket-display.loser {
-    border-color: #dc3545;
-    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    border-color: var(--color-content-primary);
+    background: var(--color-content-primary);
   }
   
   .single-ticket-display.loser .ticket-number {
-    color: #dc3545;
+    color: #fff;
   }
   
   .single-ticket-display.loser .ticket-status {
-    color: #721c24;
+    color: #fff;
     font-weight: 700;
   }
   

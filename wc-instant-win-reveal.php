@@ -315,7 +315,7 @@ add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_g
                     $background_field = 'scratch_game_background';
                     break;
                 case 'checker':
-                    $background_field = 'checker_game_background'; // Optional: can be empty for default styling
+                    $background_field = 'checke_mode_background'; // ACF field for checker mode background
                     break;
             }
             
@@ -383,6 +383,7 @@ add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_g
                     'tickets'       => $product_tickets,
                     'image_url'     => $image_url,
                     'background_image' => $background_image,
+                    'instant_win_game_name' => get_post_meta($pid, 'instant_win_game_name', true),
                     'price'         => $price,
                     'quantity'      => $quantity,
                     'total_tickets' => count($product_tickets),
@@ -985,7 +986,7 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                     $background_field = 'scratch_game_background';
                     break;
                 case 'checker':
-                    $background_field = 'checker_game_background'; // Optional: can be empty for default styling
+                    $background_field = 'checke_mode_background'; // ACF field for checker mode background
                     break;
             }
             
@@ -1079,6 +1080,7 @@ public function send_win_notification( $order_id, $specific_product_id = null ) 
                     'prizes' => $product_prizes, // Add prizes to each product
                     'image_url' => $image_url,
                     'background_image' => $background_image,
+                    'instant_win_game_name' => get_post_meta($pid, 'instant_win_game_name', true),
                     'price' => (float) $price,
                     'quantity' => (int) $quantity,
                     'total_tickets' => count($product_tickets),

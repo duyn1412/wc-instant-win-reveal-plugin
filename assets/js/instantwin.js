@@ -6030,7 +6030,11 @@ jQuery(document).ready(function($) {
     const $gameHeader = $('.game-lobby-header');
     if ($gameHeader.length > 0) {
       $gameHeader.find('h6').text(currentProduct.title);
-      $gameHeader.find('h3').html(`🔍 You are checking tickets for ${currentProduct.mode} game`);
+      // Use instant_win_game_name if available, otherwise use title
+      const gameName = currentProduct.instant_win_game_name && currentProduct.instant_win_game_name.trim() !== '' 
+        ? currentProduct.instant_win_game_name 
+        : currentProduct.title;
+      $gameHeader.find('h3').html(`YOU ARE PLAYING ${gameName}`);
       console.log('[Checker] Header text updated');
     } else {
       console.log('[Checker] No header found to update');
@@ -6182,7 +6186,11 @@ jQuery(document).ready(function($) {
     `;
     $ticketsStack.append(ticketHTML);
     
-    $('.status-text').text(`Ready to check ${totalTickets} tickets - Click Start to begin`);
+    // Use instant_win_game_name if available, otherwise use title (same logic as header)
+    const gameName = currentProduct.instant_win_game_name && currentProduct.instant_win_game_name.trim() !== '' 
+      ? currentProduct.instant_win_game_name 
+      : currentProduct.title;
+    $('.status-text').html(`${gameName} <strong>Instant Reveal</strong>`);
   }
   
   // Function to show start button
@@ -6341,9 +6349,10 @@ jQuery(document).ready(function($) {
         winnersShown++;
         $('.winners-number').text(winnersShown);
         
-        setTimeout(() => {
-          showCheckerWinPopup(ticketNumber, ticket.prize);
-        }, 500);
+        // Disabled individual win popup for checker mode - only show final popup
+        // setTimeout(() => {
+        //   showCheckerWinPopup(ticketNumber, ticket.prize);
+        // }, 500);
       }
       
       window.currentTicketIndex++;
@@ -6352,7 +6361,8 @@ jQuery(document).ready(function($) {
       saveCheckerProgress();
       
       // Show next ticket after delay (store timeout for stop functionality)
-      window.ticketCheckingTimeout = setTimeout(window.showNextTicketFunction, ticket.is_winner ? 2000 : 800);
+      // Use same delay for both winner and loser since individual popup is disabled
+      window.ticketCheckingTimeout = setTimeout(window.showNextTicketFunction, 800);
     }
     
     // Start the ticket checking animation
