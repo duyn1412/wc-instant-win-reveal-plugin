@@ -315,7 +315,13 @@
     margin-bottom: 20px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
-  
+  .status-text strong {
+    display: block;
+    font-size: 22px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
   .instantwin-wrap p {
     color: #666;
     font-size: 1.2em;
@@ -2357,7 +2363,7 @@
   
   .status-text {
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--color-content-heading);
     margin-bottom: 15px;
   }
@@ -2407,7 +2413,7 @@
   
   /* Single Ticket Display */
   .single-ticket-display {
-    background: white;
+    background: var(--color-content-primary);
     border-radius: 15px;
     padding: 25px;
     margin: 20px auto;
@@ -2429,7 +2435,7 @@
   .ticket-number {
     font-size: 18px;
     font-weight: 600;
-    color: var(--color-content-primary);
+    color: #fff;
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -2438,7 +2444,7 @@
   
   .ticket-status {
     font-size: 16px;
-    color: var(--color-content-heading);
+    color: #fff;
     font-weight: 500;
   }
   
