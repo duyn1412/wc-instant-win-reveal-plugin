@@ -340,7 +340,7 @@ jQuery(document).ready(function($) {
   
   // Always add test button first, regardless of data loading
       addTestButton(); // Add refresh data button
-      addAutoRevealTestButton(); // Add auto-reveal test button
+      // addAutoRevealTestButton(); // Add auto-reveal test button - DISABLED
   
   loadGameDataSecurely().then(function() {
     console.log('[Security] Game data loaded securely from server');
@@ -772,11 +772,11 @@ jQuery(document).ready(function($) {
       let buttonText, buttonClass, cardClass, playsText;
       
       if (product.mode === 'checker') {
-        // Instant Win Checker mode
-        buttonText = isRevealed ? '✅ Checked' : '🔍 Check Results';
-        buttonClass = isRevealed ? 'select-product-btn w-btn us-btn-style_1 completed-btn' : 'select-product-btn w-btn us-btn-style_1 checker-btn';
-        cardClass = isRevealed ? 'product-card game-completed checker-card' : 'product-card checker-card';
-        playsText = isRevealed ? '' : `Tickets: ${originalRemaining}`;
+        // Instant Win Checker mode - make it look like other games
+        buttonText = isRevealed ? '✅ Completed' : `${gameIcon} Play Now`;
+        buttonClass = isRevealed ? 'select-product-btn w-btn us-btn-style_1 completed-btn' : 'select-product-btn w-btn us-btn-style_1';
+        cardClass = isRevealed ? 'product-card game-completed' : 'product-card';
+        playsText = isRevealed ? '' : `Plays left: ${remaining}`;
       } else {
         // Regular game modes (wheel, slots, scratch)
         buttonText = isRevealed ? '✅ Completed' : `${gameIcon} Play Now`;
@@ -5835,11 +5835,7 @@ jQuery(document).ready(function($) {
         
         // Update the button text and disable it
         const playButton = productCard.find('.select-product-btn');
-        if (currentProduct.mode === 'checker') {
-          playButton.text('✅ Checked').prop('disabled', true).addClass('completed-btn');
-        } else {
-          playButton.text('✅ Completed').prop('disabled', true).addClass('completed-btn');
-        }
+        playButton.text('✅ Completed').prop('disabled', true).addClass('completed-btn');
         
         // Update plays left to show completed
         const playsLeftElement = productCard.find('.game-plays');
@@ -5973,6 +5969,10 @@ jQuery(document).ready(function($) {
       console.error('[Checker] Product mode is not checker:', currentProduct.mode);
       return;
     }
+    
+    // Scroll to top when entering checker game
+    $('html, body').animate({ scrollTop: 0 }, 500);
+    console.log('[Checker] Scrolled to top for better UX');
     
     // Hide game lobby and show checker screen (same as other games)
     $('#instantwin-game-lobby').hide();
