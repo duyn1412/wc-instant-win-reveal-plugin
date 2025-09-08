@@ -4069,11 +4069,27 @@ jQuery(document).ready(function($) {
   
   function showScratchSummary() {
     console.log('[Scratch] Showing scratch summary');
+    console.log('[DEBUG] showScratchSummary - DOM elements:');
+    console.log('[DEBUG] - .ticket-result.win count:', $('.ticket-result.win').length);
+    console.log('[DEBUG] - .ticket-result.lose count:', $('.ticket-result.lose').length);
+    console.log('[DEBUG] - window.lastWinsData:', window.lastWinsData);
     
-    // Count wins and losses from the displayed results
-    const winTickets = $('.ticket-result.win').length;
-    const loseTickets = $('.ticket-result.lose').length;
-    const totalTickets = winTickets + loseTickets;
+    // Count wins and losses - use window.lastWinsData if available (for Instant Reveal), otherwise DOM
+    let winTickets, loseTickets, totalTickets;
+    
+    if (window.lastWinsData && window.lastWinsData.length > 0) {
+      // Use wins data from Instant Reveal
+      winTickets = window.lastWinsData.length;
+      loseTickets = 0; // We don't track loses in wins data
+      totalTickets = winTickets; // For Instant Reveal, we only show wins
+      console.log('[DEBUG] showScratchSummary - using window.lastWinsData:', winTickets, 'wins');
+    } else {
+      // Use DOM elements (for manual scratching)
+      winTickets = $('.ticket-result.win').length;
+      loseTickets = $('.ticket-result.lose').length;
+      totalTickets = winTickets + loseTickets;
+      console.log('[DEBUG] showScratchSummary - using DOM elements:', {winTickets, loseTickets, totalTickets});
+    }
     
     let summaryMessage = '';
     let summaryColor = '';
@@ -4087,6 +4103,12 @@ jQuery(document).ready(function($) {
       summaryMessage = `${totalTickets} tickets - No wins this time`;
       summaryColor = '#e74c3c';
       summaryIcon = '❌';
+    }
+    
+    // If this is Instant Reveal and we have wins data, don't show popup (processInstantRevealResults already showed it)
+    if (window.lastWinsData && window.lastWinsData.length > 0) {
+      console.log('[DEBUG] showScratchSummary - skipping popup for Instant Reveal (already shown by processInstantRevealResults)');
+      return;
     }
     
     // Create summary notification
@@ -5067,6 +5089,7 @@ jQuery(document).ready(function($) {
   // Process instant reveal results and show appropriate messages (only after ALL games finished)
   function processInstantRevealResults(response) {
     console.log('[InstantWin] Processing reveal results:', response);
+    console.log('[DEBUG] processInstantRevealResults - currentProduct.mode:', currentProduct ? currentProduct.mode : 'no currentProduct');
     
     // Add loading animation to the entire game canvas
     $('#instantwin-game-canvas').addClass('processing-loading');
@@ -5556,6 +5579,8 @@ jQuery(document).ready(function($) {
   function showWinPopup(winsData) {
     console.log('[InstantWin] showWinPopup called with winsData:', winsData);
     console.log('[InstantWin] winsData length:', winsData ? winsData.length : 'null');
+    console.log('[DEBUG] showWinPopup - currentProduct.mode:', currentProduct ? currentProduct.mode : 'no currentProduct');
+    console.log('[DEBUG] showWinPopup - call stack:', new Error().stack);
     
     // Create popup overlay and content
     let popupHTML;
@@ -6085,13 +6110,11 @@ jQuery(document).ready(function($) {
             <!-- Tickets will be added here dynamically -->
           </div>
           
-          <div class="winners-count">
-            <div class="winners-text">🎁 Winners found: <span class="winners-number">0</span></div>
-          </div>
+       
           
           <div class="checker-controls">
-            <button class="select-product-btn w-btn us-btn-style_1" id="start-checking-btn" style="display: none;"> Start Checking</button>
-            <button class="select-product-btn w-btn us-btn-style_1 stop-checking-btn" id="stop-checking-btn" style="display: none;">⏹Stop Checking</button>
+            <button class="select-product-btn w-btn us-btn-style_1 dark-btn" id="start-checking-btn" style="display: none;"> Start Checking</button>
+            <button class="select-product-btn w-btn us-btn-style_1 stop-checking-btn dark-btn" id="stop-checking-btn" style="display: none;">⏹Stop Checking</button>
           </div>
         </div>
       </div>
