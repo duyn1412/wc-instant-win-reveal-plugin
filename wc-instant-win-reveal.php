@@ -98,8 +98,20 @@ add_action( 'wp_ajax_nopriv_instantwin_debug_game_types', [ $this, 'ajax_debug_g
         if ( ! $order ) return;
         foreach ( $order->get_items() as $item ) {
             $p = wc_get_product( $item->get_product_id() );
-            if ( function_exists('have_rows') && have_rows('instant_tickets_prizes',$p->get_id()) ) {
+            if ( ! $p ) continue;
+            
+            // Check if product has instant tickets prizes
+            if ( ! function_exists('have_rows') || ! have_rows('instant_tickets_prizes', $p->get_id()) ) {
+                continue;
+            }
+            
+            // Get game type
+            $game_type = get_post_meta( $p->get_id(), 'instant_win_game_type', true );
+            
+            // Only mark as instant win if it has a valid game type (including 'no' for checker mode)
+            if ( !empty($game_type) && in_array( $game_type, ['wheel','slots','scratch','no'], true ) ) {
                 update_post_meta( $order_id, '_instantwin_enabled', 1 );
+                error_log("[InstantWin] Order {$order_id} marked as instant win - Product {$p->get_id()} has game type: {$game_type}");
                 return;
             }
         }

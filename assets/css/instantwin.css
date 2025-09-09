@@ -415,18 +415,22 @@
     margin-bottom: 5px;
   }
   
-  button.w-btn.us-btn-style_1.instant-reveal-trigger {
+  button.w-btn.us-btn-style_1.instant-reveal-trigger,
+  .w-btn.us-btn-style_1.dark-btn {
     background-color: var(--color-header-middle-text)!important;
     color: #fff !important;
   
   }
   
-  button.w-btn.us-btn-style_1.instant-reveal-trigger:hover {
+  button.w-btn.us-btn-style_1.instant-reveal-trigger:hover,
+  .w-btn.us-btn-style_1.dark-btn:hover {
     background-color: var(--color-header-middle-text) !important;
   }
   
-  button.w-btn.us-btn-style_1.instant-reveal-trigger:hover {
+  button.w-btn.us-btn-style_1.instant-reveal-trigger:hover,
+  .w-btn.us-btn-style_1.dark-btn:hover{
     opacity: 0.5;
+    color: #fff !important;
   }
   
   .game-lobby-page {}
