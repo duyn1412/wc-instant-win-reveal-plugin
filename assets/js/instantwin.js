@@ -28,30 +28,36 @@ jQuery(document).ready(function($) {
       try {
         const spinningUrl = instantWin.plugin_url + '/assets/sound/spin.mp3';
         const wheelSpinningUrl = instantWin.plugin_url + '/assets/sound/wheel-sound.mp3';
+        const wheelWinUrl = instantWin.plugin_url + '/assets/sound/wheel-win-sound.mp3';
         const winningUrl = instantWin.plugin_url + '/assets/sound/win.wav';
         
         console.log('[Sounds] Initializing sound system...');
         console.log('[Sounds] Spinning sound URL:', spinningUrl);
         console.log('[Sounds] Wheel spinning sound URL:', wheelSpinningUrl);
+        console.log('[Sounds] Wheel win sound URL:', wheelWinUrl);
         console.log('[Sounds] Winning sound URL:', winningUrl);
         
         this.spinning = new Audio(spinningUrl);
         this.wheelSpinning = new Audio(wheelSpinningUrl);
+        this.wheelWin = new Audio(wheelWinUrl);
         this.winning = new Audio(winningUrl);
         this.spinning.loop = true;
         this.wheelSpinning.loop = true;
         this.spinning.volume = 0.6;
         this.wheelSpinning.volume = 0.6;
+        this.wheelWin.volume = 0.8;
         this.winning.volume = 0.8;
         
         // Preload sounds
         this.spinning.load();
         this.wheelSpinning.load();
+        this.wheelWin.load();
         this.winning.load();
         
         console.log('[Sounds] Sound system initialized successfully');
         console.log('[Sounds] Spinning audio object:', this.spinning);
         console.log('[Sounds] Wheel spinning audio object:', this.wheelSpinning);
+        console.log('[Sounds] Wheel win audio object:', this.wheelWin);
         console.log('[Sounds] Winning audio object:', this.winning);
         
         // Test sound loading (only log once)
@@ -265,6 +271,31 @@ jQuery(document).ready(function($) {
         }
       } else {
         console.warn('[Sounds] 🎵 ❌ Wheel spinning audio object not found');
+      }
+    },
+    
+    playWheelWin: function() {
+      console.log('[Sounds] Attempting to play wheel win sound...');
+      // Enable sounds if not already enabled (user interaction from clicking play button)
+      if (!soundsEnabled) {
+        console.log('[Sounds] Enabling sounds due to play button interaction...');
+        soundsEnabled = true;
+      }
+      
+      try {
+        if (this.wheelWin) {
+          this.wheelWin.currentTime = 0;
+          this.wheelWin.play().then(() => {
+            console.log('[Sounds] Wheel win sound started playing successfully');
+          }).catch(e => {
+            console.warn('[Sounds] Could not play wheel win sound:', e);
+            console.warn('[Sounds] Error details:', e.message);
+          });
+        } else {
+          console.warn('[Sounds] Wheel win sound not available');
+        }
+      } catch (error) {
+        console.warn('[Sounds] Error playing wheel win sound:', error);
       }
     },
     
@@ -2013,6 +2044,24 @@ jQuery(document).ready(function($) {
       
       // Disable the button after use
       $button.prop('disabled', true).text('Revealed').addClass('revealed');
+      
+      // Check if this was the last ticket (all tickets revealed)
+      const totalCards = currentProduct.tickets.length;
+      const revealedCards = $('.scratch-card-individual[data-revealed="true"]');
+      const isLastTicket = revealedCards.length === totalCards;
+      
+      console.log('[Auto-Reveal] Last ticket check - Total:', totalCards, 'Revealed:', revealedCards.length, 'isLastTicket:', isLastTicket);
+      
+      // If this was the last ticket, automatically call instant reveal function
+      if (isLastTicket) {
+        console.log('[Auto-Reveal] Last ticket revealed! Automatically calling instant reveal function...');
+        
+        // Wait 2 seconds after showing the result
+        setTimeout(() => {
+          // Call instant reveal function directly instead of clicking button
+          callInstantRevealFunction();
+        }, 2000);
+      }
     });
     
     // Update card counter and auto-reveal button state when slider changes
@@ -4865,6 +4914,12 @@ jQuery(document).ready(function($) {
         lastPlay.result = isWin ? 'win' : 'lose';
         lastPlay.prize = isWin ? indicatedSegment.text : '';
         lastPlay.endTime = new Date().toISOString();
+        
+        // Play wheel win sound when wheel stops (only for wins)
+        if (isWin) {
+          console.log('[Wheel] 🎉 Win detected - playing wheel win sound after wheel stopped');
+          gameSounds.playWheelWin();
+        }
       }
       
       // Re-enable button
@@ -4882,44 +4937,48 @@ jQuery(document).ready(function($) {
     gameSounds.getWheelSoundDuration().then(soundDuration => {
       console.log('[Wheel] 🎵 Sound duration:', soundDuration, 'seconds');
       
-      // Use full sound duration (13+ seconds)
-      let finalDuration = soundDuration;
-      console.log('[Wheel] 🎵 Using full sound duration:', finalDuration, 'seconds');
+      // Determine if this is a win or lose based on targetPrize
+      const isWin = targetPrize !== 'X';
+      let finalDuration;
+      
+      // Use 9 seconds for all wheel spins (both win and lose)
+      finalDuration = 9.0;
+      console.log('[Wheel] 🎵 Using 9 seconds duration for wheel spinning');
       
       // Update wheel animation duration to match sound
       wheelInstance.animation.duration = finalDuration;
       console.log('[Wheel] 🎡 Animation duration set to:', finalDuration, 'seconds');
       
-            // Play sound 1 second BEFORE animation starts
+            // Play sound first, then start animation after small delay
       const soundStartTime = Date.now();
       console.log('[Wheel] 🎵 Playing wheel spinning sound at:', soundStartTime);
       gameSounds.playWheelSpinning(false);
       
-      // Wait 1 second before starting animation
+      // Start animation after 500ms to ensure sound starts first
       setTimeout(() => {
         const animationStartTime = Date.now();
         console.log('[Wheel] 🎡 Starting wheel animation at:', animationStartTime);
         console.log('[Wheel] ⏱️ Time difference (animation - sound):', animationStartTime - soundStartTime, 'ms');
-    wheelInstance.startAnimation();
+        wheelInstance.startAnimation();
         console.log('[Wheel] 🎡 Wheel animation started with duration:', finalDuration, 'seconds');
-      }, 1000); // 1 second delay
+      }, 500); // 500ms delay to ensure sound starts first
       
     }).catch(error => {
       console.warn('[Wheel] 🎵 Could not get sound duration, using default:', error);
       
-      // Fallback: use default duration with 1 second delay
+      // Fallback: use default duration
       const soundStartTime = Date.now();
       console.log('[Wheel] 🎵 Playing wheel spinning sound at:', soundStartTime);
       gameSounds.playWheelSpinning(false);
       
-      // Wait 1 second before starting animation
+      // Start animation after 500ms to ensure sound starts first
       setTimeout(() => {
         const animationStartTime = Date.now();
         console.log('[Wheel] 🎡 Starting wheel animation at:', animationStartTime);
         console.log('[Wheel] ⏱️ Time difference (animation - sound):', animationStartTime - soundStartTime, 'ms');
         wheelInstance.startAnimation();
         console.log('[Wheel] 🎡 Wheel animation started with default duration');
-      }, 1000); // 1 second delay
+      }, 500); // 500ms delay to ensure sound starts first
     });
     
     // Note: Sound will be stopped by callbackFinished when animation ends
@@ -4962,10 +5021,8 @@ jQuery(document).ready(function($) {
       }, 2000); // Wait 2 seconds after showing the result
     }
     
-    // Play winning sound if win
-    if (isWin && prize !== 'X') {
-      gameSounds.playWinning();
-    }
+    // Win sound is now handled by wheel-sound.mp3 at 10th second
+    // No need to play separate winning sound
     
     // Show result message
     let resultMessage = '';
