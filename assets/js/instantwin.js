@@ -369,8 +369,8 @@ jQuery(document).ready(function($) {
   
   // Entry point: Load game data and initialize Game Lobby
   
-  // Always add test button first, regardless of data loading
-      addTestButton(); // Add refresh data button
+  // Test buttons disabled for production
+      // addTestButton(); // Add refresh data button - DISABLED
       // addAutoRevealTestButton(); // Add auto-reveal test button - DISABLED
   
   loadGameDataSecurely().then(function() {
@@ -1340,8 +1340,8 @@ jQuery(document).ready(function($) {
     // Add product thumbnail
     addProductThumbnail();
     
-    // Add test buttons for each segment
-    addWheelTestButtons();
+    // Test buttons disabled for production
+    // addWheelTestButtons();
     console.log('ddallPrizes', allPrizes);
 
 
@@ -1439,10 +1439,17 @@ jQuery(document).ready(function($) {
       return;
     }
     
-    // Calculate stop angle
-    const randomForSegment = wheelInstance.getRandomForSegment(targetSegmentNumber);
-    wheelInstance.animation.stopAngle = randomForSegment;
-    console.log('[Test] 🎡 Set stopAngle to:', wheelInstance.animation.stopAngle);
+    // Calculate stop angle to point to center of segment (more precise)
+    const segmentAngle = 360 / wheelInstance.numSegments;
+    const segmentCenterAngle = (targetSegmentNumber - 1) * segmentAngle + (segmentAngle / 2);
+    
+    // Add some randomness but keep it within the segment center area
+    const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.6); // 60% of segment width
+    const finalStopAngle = segmentCenterAngle + randomOffset;
+    
+    wheelInstance.animation.stopAngle = finalStopAngle;
+    console.log('[Test] 🎡 Segment center angle:', segmentCenterAngle, 'degrees');
+    console.log('[Test] 🎡 Final stop angle:', finalStopAngle, 'degrees');
     
     // Set animation callback for testing
     wheelInstance.animation.callbackFinished = function(indicatedSegment) {
@@ -1731,8 +1738,8 @@ jQuery(document).ready(function($) {
     // Add product thumbnail
     addProductThumbnail();
     
-    // Add test buttons for each segment (prizes + lose)
-    addSlotsTestButtons();
+    // Test buttons disabled for production
+    // addSlotsTestButtons();
   }
   
   function addSlotsTestButtons() {
@@ -3443,17 +3450,8 @@ jQuery(document).ready(function($) {
   
   function clearAllScratchProgress() {
     try {
-      // Clear all scratch progress for all tickets
-      if (currentProduct && currentProduct.tickets) {
-        currentProduct.tickets.forEach(ticket => {
-          clearScratchProgress(ticket.number);
-        });
-        console.log('[Scratch] Cleared all scratch progress for', currentProduct.tickets.length, 'tickets');
-      } else {
-        console.log('[Scratch] No current product or tickets available, clearing all scratch progress from localStorage');
-      }
-      
-      // Also clear any scratch progress from localStorage that might not be in current product
+      // Always clear all scratch progress from localStorage first
+      console.log('[Scratch] Clearing all scratch progress from localStorage...');
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -3464,11 +3462,18 @@ jQuery(document).ready(function($) {
       
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
+        console.log('[Scratch] Removed localStorage key:', key);
       });
       
-      if (keysToRemove.length > 0) {
-        console.log('[Scratch] Cleared additional scratch progress keys:', keysToRemove.length);
+      // Also clear if currentProduct exists
+      if (currentProduct && currentProduct.tickets) {
+        currentProduct.tickets.forEach(ticket => {
+          clearScratchProgress(ticket.number);
+        });
+        console.log('[Scratch] Cleared all scratch progress for', currentProduct.tickets.length, 'tickets');
       }
+      
+      console.log('[Scratch] Cleared', keysToRemove.length, 'scratch progress entries from localStorage');
       
     } catch (error) {
       console.error('[Scratch] Error clearing all scratch progress:', error);
@@ -4892,11 +4897,20 @@ jQuery(document).ready(function($) {
       return;
     }
     
-    // Calculate stop angle using official Winwheel method
-    const randomForSegment = wheelInstance.getRandomForSegment(targetSegmentNumber);
-    wheelInstance.animation.stopAngle = randomForSegment;
+    // Calculate stop angle to point to center of segment (more precise)
+    const segmentAngle = 360 / wheelInstance.numSegments;
+    const segmentCenterAngle = (targetSegmentNumber - 1) * segmentAngle + (segmentAngle / 2);
     
-    console.log('[Game] Set stopAngle to:', wheelInstance.animation.stopAngle);
+    // Add some randomness but keep it within the segment center area
+    const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.6); // 60% of segment width
+    const finalStopAngle = segmentCenterAngle + randomOffset;
+    
+    wheelInstance.animation.stopAngle = finalStopAngle;
+    
+    console.log('[Game] Segment angle:', segmentAngle, 'degrees');
+    console.log('[Game] Segment center angle:', segmentCenterAngle, 'degrees');
+    console.log('[Game] Random offset:', randomOffset, 'degrees');
+    console.log('[Game] Final stop angle:', finalStopAngle, 'degrees');
     
     // Set animation callback
     wheelInstance.animation.callbackFinished = function(indicatedSegment) {
@@ -5431,6 +5445,17 @@ jQuery(document).ready(function($) {
         // Clear all scratch progress from localStorage
         console.log('[Test] Clearing all scratch progress...');
         clearAllScratchProgress();
+        
+        // Reset scratch game UI elements
+        console.log('[Test] Resetting scratch game UI...');
+        $('.scratch-card-individual').removeClass('revealed').attr('data-revealed', 'false');
+        $('.circle-canvas').show();
+        $('.ticket-result-new').remove();
+        $('.auto-reveal-btn').prop('disabled', false).text('Click to Auto-Reveal').removeClass('revealed');
+        $('.card-counter').find('#current-card-number').text('1');
+        $('.card-counter').find('#total-cards').text('0');
+        $('#remaining-cards-count').text('0');
+        $('#remaining-cards-text').text('scratchcards');
         
         // Clear checker progress from localStorage
         console.log('[Test] Clearing checker progress...');
